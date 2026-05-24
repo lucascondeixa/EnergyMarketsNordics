@@ -15,6 +15,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env if present; no-op if missing
+
 import typer
 import yaml
 from rich.console import Console

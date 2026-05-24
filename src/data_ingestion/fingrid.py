@@ -3,15 +3,16 @@
 Fingrid exposes real-time and historical data at https://data.fingrid.fi/api
 API key required (free registration at data.fingrid.fi).
 
-Useful dataset IDs for this project:
-  - 244:  Electricity production in Finland (MW, real-time)
-  - 242:  Electricity consumption in Finland (MW, real-time)
-  - 247:  Nuclear power production (MW)
-  - 191:  Hydro power production (MW)
-  - 84:   FCR-N capacity price (EUR/MW/h)
-  - 85:   FCR-D upward capacity price (EUR/MW/h)
-  - 87:   aFRR capacity price upward (EUR/MW/h)
-  - 301:  mFRR capacity price upward (EUR/MW/h)
+Verified dataset IDs (confirmed against API v2 catalogue):
+  - 188:  Nuclear power production - real-time data (MW, 3-min)
+  - 191:  Hydro power production - real-time data (MW, 3-min)
+  - 181:  Wind power production - real-time data (MW, 3-min)
+  - 317:  FCR-N hourly market prices (EUR/MW/h)
+  - 318:  FCR-D upward hourly market prices (EUR/MW/h)
+
+Note: the Fingrid API v2 returns the value under a key equal to the Finnish
+dataset name (e.g. "Ydinvoimatuotanto - reaaliaikatieto"), not "value".
+The parser extracts it by finding the key that is neither startTime nor endTime.
 
 Full dataset list: https://data.fingrid.fi/api/datasets
 """
@@ -91,22 +92,31 @@ class FingridClient:
             log.warning("No data returned for dataset %d in range %s–%s", dataset_id, start, end)
             return pd.Series(dtype=float)
 
+        # The value key is the Finnish dataset name, not a fixed "value" field.
+        first = records[0]
+        value_keys = [k for k in first if k not in ("startTime", "endTime")]
+        if not value_keys:
+            log.error("Cannot find value key in dataset %d response: %s", dataset_id, first)
+            return pd.Series(dtype=float)
+        value_key = value_keys[0]
+        log.debug("Dataset %d value field: '%s'", dataset_id, value_key)
+
         timestamps = pd.to_datetime([r["startTime"] for r in records], utc=True)
-        values = [r.get("value") for r in records]
+        values = [r.get(value_key) for r in records]
         series = pd.Series(values, index=timestamps, dtype=float, name=f"dataset_{dataset_id}")
         return series.sort_index()
 
     def get_fcr_n_prices(self, start: datetime, end: datetime) -> pd.Series:
-        return self.get_dataset(84, start, end)
+        return self.get_dataset(317, start, end)
 
     def get_fcr_d_up_prices(self, start: datetime, end: datetime) -> pd.Series:
-        return self.get_dataset(85, start, end)
-
-    def get_afrr_up_capacity_prices(self, start: datetime, end: datetime) -> pd.Series:
-        return self.get_dataset(87, start, end)
+        return self.get_dataset(318, start, end)
 
     def get_nuclear_production(self, start: datetime, end: datetime) -> pd.Series:
-        return self.get_dataset(247, start, end)
+        return self.get_dataset(188, start, end)
 
     def get_hydro_production(self, start: datetime, end: datetime) -> pd.Series:
         return self.get_dataset(191, start, end)
+
+    def get_wind_production(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(181, start, end)
