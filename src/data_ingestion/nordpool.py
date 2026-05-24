@@ -27,6 +27,10 @@ log = logging.getLogger(__name__)
 
 ENTSOE_BASE_URL = "https://web-api.tp.entsoe.eu/api"
 FINLAND_AREA_CODE = "10YFI-1--------U"
+SWEDEN_SE1_AREA_CODE = "10Y1001A1001A44P"
+SWEDEN_SE2_AREA_CODE = "10Y1001A1001A45N"
+SWEDEN_SE3_AREA_CODE = "10Y1001A1001A46L"
+SWEDEN_SE4_AREA_CODE = "10Y1001A1001A47J"
 
 
 class NordPoolClient:
@@ -72,6 +76,9 @@ class NordPoolClient:
             response.raise_for_status()
 
         return _parse_entsoe_day_ahead(response.text)
+
+    def get_se2_day_ahead_prices(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_day_ahead_prices(start, end, area=SWEDEN_SE2_AREA_CODE)
 
     def get_latest_day_ahead_prices(self, area: str = FINLAND_AREA_CODE) -> pd.Series:
         """Convenience: fetch yesterday + today prices."""

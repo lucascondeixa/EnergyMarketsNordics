@@ -18,10 +18,30 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from src.data_ingestion.fingrid import FingridClient
+from src.data_ingestion.nordpool import NordPoolClient, SWEDEN_SE2_AREA_CODE
 from src.utils.schema import HydroInflowConfig, WindFarmConfig
 from src.utils.time_utils import synthetic_inflow_series, synthetic_price_series
 
 log = logging.getLogger(__name__)
+
+
+def _merge_real_and_synthetic(
+    real: pd.Series,
+    horizon_index: pd.DatetimeIndex,
+    synthetic_fn,
+) -> pd.Series:
+    """Reindex *real* to *horizon_index*, filling gaps with *synthetic_fn(index)*."""
+    aligned = real.reindex(horizon_index, method="nearest", tolerance="30min")
+    n_real = int(aligned.notna().sum())
+    n_total = len(horizon_index)
+    if n_real < n_total:
+        synthetic = synthetic_fn(horizon_index)
+        aligned = aligned.fillna(synthetic)
+        log.info("API data: %d/%d hours real, %d filled with synthetic", n_real, n_total, n_total - n_real)
+    else:
+        log.info("API data: all %d hours from live feed", n_total)
+    return aligned.clip(lower=0)
 
 
 def load_price_forecast(
@@ -35,6 +55,18 @@ def load_price_forecast(
     if str(source) == "synthetic":
         log.info("Using synthetic price forecast (development mode)")
         return synthetic_price_series(horizon_index)
+
+    if str(source) == "api":
+        log.info("Fetching FI day-ahead prices from ENTSO-E")
+        client = NordPoolClient()
+        start = horizon_index[0].to_pydatetime()
+        end = (horizon_index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+        try:
+            raw = client.get_day_ahead_prices(start, end)
+        except Exception as exc:
+            log.error("ENTSO-E fetch failed (%s); falling back to synthetic", exc)
+            return synthetic_price_series(horizon_index)
+        return _merge_real_and_synthetic(raw, horizon_index, synthetic_price_series)
 
     path = Path(source)
     if not path.exists():
@@ -62,6 +94,17 @@ def load_inflow_forecast(
     *source*: "synthetic" (requires *inflow_cfg*) or path to CSV with columns
     'timestamp', 'inflow_gwh_per_h'.
     """
+    if str(source) == "api":
+        log.info("Real hydro inflow not available via API; using synthetic inflow (SYKE integration is Phase 2)")
+        if inflow_cfg is None:
+            raise ValueError("inflow_cfg required for synthetic inflow fallback")
+        return synthetic_inflow_series(
+            horizon_index,
+            annual_avg_gwh_per_hour=inflow_cfg.annual_avg_gwh_per_hour,
+            seasonal_amplitude=inflow_cfg.seasonal_amplitude,
+            peak_day_of_year=inflow_cfg.peak_day_of_year,
+        )
+
     if str(source) == "synthetic":
         if inflow_cfg is None:
             raise ValueError("inflow_cfg required for synthetic inflow generation")
@@ -139,6 +182,18 @@ def load_fcr_n_price_forecast(
         log.info("Using synthetic FCR-N price forecast (development mode)")
         return _synthetic_fcr_n_price(horizon_index)
 
+    if str(source) == "api":
+        log.info("Fetching FCR-N capacity prices from Fingrid (dataset 84)")
+        client = FingridClient()
+        start = horizon_index[0].to_pydatetime()
+        end = (horizon_index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+        try:
+            raw = client.get_fcr_n_prices(start, end)
+        except Exception as exc:
+            log.error("Fingrid FCR-N fetch failed (%s); falling back to synthetic", exc)
+            return _synthetic_fcr_n_price(horizon_index)
+        return _merge_real_and_synthetic(raw, horizon_index, _synthetic_fcr_n_price)
+
     path = Path(source)
     if not path.exists():
         raise FileNotFoundError(f"FCR-N price file not found: {path}")
@@ -197,6 +252,22 @@ def load_se2_price_forecast(
             raise ValueError("fi_price_series required for 'same_as_fi' source")
         log.info("SE2 price = FI price (price-convergence assumption)")
         return fi_price_series.rename("price_eur_mwh_se2")
+
+    if str(source) == "api":
+        log.info("Fetching SE2 day-ahead prices from ENTSO-E")
+        client = NordPoolClient()
+        start = horizon_index[0].to_pydatetime()
+        end = (horizon_index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+        try:
+            raw = client.get_day_ahead_prices(start, end, area=SWEDEN_SE2_AREA_CODE)
+        except Exception as exc:
+            log.error("ENTSO-E SE2 fetch failed (%s); falling back to synthetic SE2", exc)
+            if fi_price_series is not None:
+                return _synthetic_se2_price(horizon_index, fi_price_series)
+            return synthetic_price_series(horizon_index)
+        fallback = (lambda idx: _synthetic_se2_price(idx, fi_price_series)
+                    if fi_price_series is not None else synthetic_price_series(idx))
+        return _merge_real_and_synthetic(raw, horizon_index, fallback)
 
     if str(source) == "synthetic":
         if fi_price_series is None:
