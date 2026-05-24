@@ -1,0 +1,135 @@
+# Fortum Finnish generation portfolio
+# Sources: Fortum annual reports, World Nuclear Association, Fingrid open data
+# All capacities are net electrical output at busbar.
+
+hydro:
+  pump_storage_enabled: false   # Fortum has no pump storage in Finland (Kemijoki Oy exploring Ailangantunturi ~2032)
+
+  turbine:
+    # Vuoksi (254 MW) + Oulujoki (~850 MW) + Kemijoki Oy 57% share (~641 MW = 57% × ~1,125 MW total)
+    capacity_mw: 1745
+    min_output_mw: 0
+    efficiency: 0.90
+    ramp_rate_mw_per_hour: 870  # ~50% of combined capacity per hour
+
+  pump:                         # Kept for future use (Kemijoki Oy pumped storage, earliest ~2032)
+    capacity_mw: 0
+    min_input_mw: 0
+    efficiency: 0.85
+
+  reservoir:
+    # Oulujärvi (~500 GWh usable) + Kemijärvi 57% share (~480 GWh = 57% × ~850 GWh seasonal storage)
+    # Note: single aggregated reservoir is a simplification — two separate river systems
+    # with correlated but distinct spring flood timing. Split into named blocks in Phase 2.
+    capacity_gwh: 980.0
+    min_level_gwh: 100.0
+    initial_level_gwh: 490.0    # 50% fill at start
+    terminal_water_value_eur_per_mwh: 30.0
+
+  inflow:
+    # Vuoksi/Oulujoki: ~3 TWh/year → 0.34 GWh/h
+    # Kemijoki 57%: ~1.9 TWh/year → 0.22 GWh/h  (total Kemijoki Oy ~3.4 TWh/year)
+    annual_avg_gwh_per_hour: 0.56
+    seasonal_amplitude: 0.70    # Both systems have strong spring floods; Kemijoki slightly earlier
+    peak_day_of_year: 137       # ~May 17 (weighted average of Oulujoki day 140, Kemijoki day 133)
+
+nuclear:
+  # Loviisa Nuclear Power Plant — Fortum 100% owner/operator
+  # VVER-440 pressurised water reactors, operating licence extended to 2050 (Feb 2023)
+  # Turbine modernisation (+38 MW per unit) commencing 2026
+
+  loviisa_1:
+    capacity_mw: 507            # Net; rises to ~545 MW post-2026 turbine upgrade
+    min_output_fraction: 0.50   # VVER-440 design minimum stable load ~40–50%
+    startup_cost_eur: 1_000_000 # Full cold restart: fuel risk + lost production cost
+    shutdown_cost_eur: 200_000
+    min_up_hours: 240           # 10 days — nuclear units strongly prefer continuous operation
+    min_down_hours: 72          # 3 days minimum cold shutdown
+    ramp_rate_mw_per_hour: 25   # Conservative: ~5% rated power/hour for VVER-440
+    initial_on: true
+    initial_hours_on: 500       # Assumed already running
+    variable_cost_eur_per_mwh: 7.0   # Uranium fuel + variable O&M (EUR/MWh)
+    planned_outages:
+      # 2025 annual outage (approx. — confirm against Fortum's annual outage bulletin)
+      - start: "2025-08-01T00:00:00+00:00"
+        end:   "2025-09-12T00:00:00+00:00"   # ~42 days (extensive 4-year cycle outage)
+      # 2026 outage includes low-pressure turbine modernisation
+      - start: "2026-08-01T00:00:00+00:00"
+        end:   "2026-09-20T00:00:00+00:00"
+
+  loviisa_2:
+    capacity_mw: 507
+    min_output_fraction: 0.50
+    startup_cost_eur: 1_000_000
+    shutdown_cost_eur: 200_000
+    min_up_hours: 240
+    min_down_hours: 72
+    ramp_rate_mw_per_hour: 25
+    initial_on: true
+    initial_hours_on: 500
+    variable_cost_eur_per_mwh: 7.0
+    planned_outages:
+      # 2025 annual outage
+      - start: "2025-08-17T00:00:00+00:00"
+        end:   "2025-09-18T00:00:00+00:00"   # 32 days
+      - start: "2026-08-17T00:00:00+00:00"
+        end:   "2026-09-18T00:00:00+00:00"
+
+wind:
+  # Pjelax onshore wind farm — Fortum 60% / Helen 40%
+  # Commissioned May 2024; 56 × Nordex N163/6.X turbines; Ostrobothnia, Finland
+  pjelax:
+    capacity_mw: 228            # Fortum's 60% share of 380 MW nameplate
+    annual_capacity_factor: 0.35
+    # Wind is non-dispatchable (must-take). Its generation is subtracted from net load
+    # and added to Fortum's Elspot position at floor price (always dispatched).
+
+se2_pump_storage:
+  # Fortum-owned pump storage in Värmland, Sweden (SE2 bidding zone)
+  # All three plants are seasonal storage (pump in spring/summer, generate in autumn/winter)
+  # Reservoir sizes are stylised estimates — replace with Fortum SCADA data.
+
+  kymmen:
+    turbine_capacity_mw: 50.0       # Nameplate 53 MW; conservative net figure
+    pump_capacity_mw: 53.0
+    turbine_efficiency: 0.88
+    pump_efficiency: 0.83
+    reservoir_capacity_gwh: 70.0    # Lake Värmeln seasonal regulation volume (~1,400h at full discharge)
+    min_level_gwh: 5.0
+    initial_level_gwh: 35.0
+    terminal_water_value_eur_per_mwh: 25.0
+    ramp_rate_mw_per_hour: 53.0     # Pump storage ramps essentially instantaneously
+    natural_inflow_gwh_per_hour: 0.025  # Small natural river inflow
+
+  letten:
+    turbine_capacity_mw: 34.0
+    pump_capacity_mw: 36.0
+    turbine_efficiency: 0.88
+    pump_efficiency: 0.83
+    reservoir_capacity_gwh: 35.0    # ~1,000h at full discharge
+    min_level_gwh: 2.5
+    initial_level_gwh: 17.5
+    terminal_water_value_eur_per_mwh: 25.0
+    ramp_rate_mw_per_hour: 36.0
+    natural_inflow_gwh_per_hour: 0.010
+
+  eggsjoen:
+    turbine_capacity_mw: 0.55
+    pump_capacity_mw: 0.60
+    turbine_efficiency: 0.85
+    pump_efficiency: 0.80
+    reservoir_capacity_gwh: 0.4     # Small mountain lake; ~730h at full discharge
+    min_level_gwh: 0.05
+    initial_level_gwh: 0.2
+    terminal_water_value_eur_per_mwh: 25.0
+    ramp_rate_mw_per_hour: 0.6
+    natural_inflow_gwh_per_hour: 0.0
+
+# Note: Kemijoki Oy co-owned plants (~3,550 MW across 20 plants on Kemijoki river) are
+# NOT included here. Fortum's ownership stake in Kemijoki Oy is ~57%. Modelling these
+# requires Kemijoki-specific reservoir data and is recommended as a Phase 2 extension.
+
+# CHP plants (heat-network driven, not independently optimised):
+#   Suomenoja (Espoo): coal unit closed Apr 2024; gas backup remains
+#   Naantali: 80 MWe steam turbine (co-owned)
+# For now these are treated as scheduled must-run inputs via --chp-schedule-csv flag.

@@ -1,0 +1,112 @@
+"""Fingrid Open Data API client.
+
+Fingrid exposes real-time and historical data at https://data.fingrid.fi/api
+API key required (free registration at data.fingrid.fi).
+
+Useful dataset IDs for this project:
+  - 244:  Electricity production in Finland (MW, real-time)
+  - 242:  Electricity consumption in Finland (MW, real-time)
+  - 247:  Nuclear power production (MW)
+  - 191:  Hydro power production (MW)
+  - 84:   FCR-N capacity price (EUR/MW/h)
+  - 85:   FCR-D upward capacity price (EUR/MW/h)
+  - 87:   aFRR capacity price upward (EUR/MW/h)
+  - 301:  mFRR capacity price upward (EUR/MW/h)
+
+Full dataset list: https://data.fingrid.fi/api/datasets
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timezone
+
+import httpx
+import pandas as pd
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+log = logging.getLogger(__name__)
+
+FINGRID_BASE_URL = "https://data.fingrid.fi/api"
+
+
+class FingridClient:
+    """Thin async-capable client for the Fingrid Open Data API v2."""
+
+    def __init__(self, api_key: str | None = None):
+        self.api_key = api_key or os.environ.get("FINGRID_API_KEY", "")
+        if not self.api_key:
+            log.warning(
+                "FINGRID_API_KEY not set. Set the environment variable or pass api_key. "
+                "Register for a free key at https://data.fingrid.fi"
+            )
+        self._headers = {"x-api-key": self.api_key, "Accept": "application/json"}
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    def get_dataset(
+        self,
+        dataset_id: int,
+        start: datetime,
+        end: datetime,
+        resolution: str = "PT1H",
+    ) -> pd.Series:
+        """Fetch a Fingrid dataset as a pandas Series.
+
+        Parameters
+        ----------
+        dataset_id:  Fingrid dataset ID (integer)
+        start:       Start of the time range (UTC)
+        end:         End of the time range (UTC, exclusive)
+        resolution:  ISO 8601 duration string (PT1H = 1 hour, PT15M = 15 min)
+
+        Returns
+        -------
+        pd.Series with UTC DatetimeIndex and float values.
+        """
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=timezone.utc)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+
+        params = {
+            "startTime": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "endTime": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "format": "json",
+            "oneRowPerTimePeriod": True,
+            "page": 1,
+            "pageSize": 20000,
+        }
+
+        url = f"{FINGRID_BASE_URL}/datasets/{dataset_id}/data"
+        log.debug("Fetching Fingrid dataset %d from %s to %s", dataset_id, start, end)
+
+        with httpx.Client(timeout=30) as client:
+            response = client.get(url, headers=self._headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+        records = data.get("data", [])
+        if not records:
+            log.warning("No data returned for dataset %d in range %s–%s", dataset_id, start, end)
+            return pd.Series(dtype=float)
+
+        timestamps = pd.to_datetime([r["startTime"] for r in records], utc=True)
+        values = [r.get("value") for r in records]
+        series = pd.Series(values, index=timestamps, dtype=float, name=f"dataset_{dataset_id}")
+        return series.sort_index()
+
+    def get_fcr_n_prices(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(84, start, end)
+
+    def get_fcr_d_up_prices(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(85, start, end)
+
+    def get_afrr_up_capacity_prices(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(87, start, end)
+
+    def get_nuclear_production(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(247, start, end)
+
+    def get_hydro_production(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(191, start, end)

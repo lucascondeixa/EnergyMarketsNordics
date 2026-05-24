@@ -1,0 +1,62 @@
+# Market configuration for Finnish / Nordic energy markets
+
+elspot:
+  area: "FI"                    # Nord Pool bidding area
+  price_cap_eur_mwh: 4000.0     # Maximum Elspot price (EUR/MWh)
+  price_floor_eur_mwh: -500.0   # Minimum Elspot price (EUR/MWh)
+  bid_steps: 10                 # Number of price-quantity steps in submitted bid curve
+  gate_closure_hour: 12         # Noon CET day-ahead gate closure
+
+ancillary_services:
+  # Finnish ancillary services operated by Fingrid
+  # Each service can be enabled independently
+
+  FCR_N:
+    enabled: true               # Frequency Containment Reserve – Normal operation
+    symmetric: true             # Equal upward AND downward capacity required (Fingrid spec)
+    min_bid_mw: 0.1             # Fingrid minimum (non-binding for Fortum portfolio)
+    activation_trigger_hz: 0.1  # Full activation at ±0.1 Hz (linear droop 49.9–50.1 Hz)
+    gate_closure_hour_cet: 8    # D-1 08:00 CET (before Elspot noon gate)
+    # Per-portfolio max: 70 MW single-point-of-failure limit (Fingrid Nordic FCR spec)
+    # Hydro: Oulujoki + Vuoksi are two separate SCADA systems → each can offer up to 70 MW.
+    # Aggregate cap here covers the combined portfolio (conservative single-BSP assumption).
+    max_fcr_n_mw_hydro: 70.0
+    # Nuclear: VVER-440 FCR-N capability is limited; conservative pre-qualification estimate.
+    max_fcr_n_mw_per_nuclear_unit: 25.0
+
+  FCR_D_UP:
+    enabled: false              # Frequency Containment Reserve – Disturbance (upward)
+    symmetric: false
+    min_bid_mw: 1.0
+    activation_trigger_hz: 0.5
+
+  FCR_D_DOWN:
+    enabled: false
+    symmetric: false
+    min_bid_mw: 1.0
+
+  aFRR:
+    enabled: false              # Automatic Frequency Restoration Reserve
+    symmetric: true             # Both up and down capacity required
+    min_bid_mw: 1.0
+    response_time_seconds: 120  # Must respond within 2 min
+
+  mFRR:
+    enabled: false              # Manual Frequency Restoration Reserve
+    min_bid_mw: 5.0
+    response_time_minutes: 15
+
+elspot_se2:
+  area: "SE2"
+  price_cap_eur_mwh: 4000.0
+  price_floor_eur_mwh: -500.0
+  bid_steps: 10
+  gate_closure_hour: 12
+
+optimisation:
+  horizon_hours: 168            # 7-day rolling horizon
+  time_resolution_hours: 1
+  solver: "appsi_highs"         # Pyomo solver name for HiGHS
+  solver_options:
+    mip_rel_gap: 0.005          # 0.5% MIP gap tolerance
+    time_limit: 300             # 5 min solver time limit
