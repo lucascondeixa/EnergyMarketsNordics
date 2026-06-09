@@ -126,7 +126,7 @@ st.sidebar.markdown("**Sensitivity**")
 twv = st.sidebar.slider("Terminal water value (EUR/MWh)", min_value=20, max_value=100, value=55, step=5)
 fcr_n_cap_hydro = st.sidebar.slider("FCR-N hydro cap (MW)", min_value=0, max_value=200, value=70, step=10)
 
-run_btn = st.sidebar.button("Run Optimisation", type="primary", use_container_width=True)
+run_btn = st.sidebar.button("Run Optimisation", type="primary", width="stretch")
 
 # ---------------------------------------------------------------------------
 # Optimisation (auto-run on first load, re-run on button click)
@@ -250,13 +250,13 @@ with tab_portfolio:
         gen_colors.append("#9C27B0")
 
     fig_port = _stacked_area(portfolio_df, gen_cols, gen_labels, gen_colors, price=price_fi)
-    st.plotly_chart(fig_port, use_container_width=True, key="port_dispatch")
+    st.plotly_chart(fig_port, width="stretch", key="port_dispatch")
 
     col_l, col_r = st.columns(2)
     with col_l:
         st.subheader("FI reservoir (Oulujärvi)")
         fig_res = _line([(fi_df["reservoir_gwh"], "Reservoir", "#2196F3")], "GWh")
-        st.plotly_chart(fig_res, use_container_width=True, key="port_fi_res")
+        st.plotly_chart(fig_res, width="stretch", key="port_fi_res")
     with col_r:
         if se2_df is not None:
             st.subheader("SE2 reservoir levels")
@@ -267,7 +267,7 @@ with tab_portfolio:
                 for u, c in zip(unit_names, se2_colors)
             ]
             fig_se2_res_small = _line(series_list, "GWh")
-            st.plotly_chart(fig_se2_res_small, use_container_width=True, key="port_se2_res")
+            st.plotly_chart(fig_se2_res_small, width="stretch", key="port_se2_res")
         else:
             st.info("No SE2 pump storage configured.")
 
@@ -282,7 +282,7 @@ with tab_fi:
         ["#2196F3", "#FF9800", "#4CAF50"],
         price=price_fi,
     )
-    st.plotly_chart(fig_fi, use_container_width=True, key="fi_dispatch")
+    st.plotly_chart(fig_fi, width="stretch", key="fi_dispatch")
 
     has_fcr_n = bool(fi_df["fcr_n_total_mw"].any())
     col_a, col_b = st.columns(2)
@@ -290,7 +290,7 @@ with tab_fi:
     with col_a:
         st.subheader("Reservoir level")
         fig_res_fi = _line([(fi_df["reservoir_gwh"], "Oulujärvi", "#2196F3")], "GWh")
-        st.plotly_chart(fig_res_fi, use_container_width=True, key="fi_reservoir")
+        st.plotly_chart(fig_res_fi, width="stretch", key="fi_reservoir")
 
     with col_b:
         if has_fcr_n:
@@ -308,11 +308,11 @@ with tab_fi:
                 barmode="stack", yaxis_title="MW",
                 margin=dict(t=30, b=40), hovermode="x unified",
             )
-            st.plotly_chart(fig_fcr, use_container_width=True, key="fi_fcr_n")
+            st.plotly_chart(fig_fcr, width="stretch", key="fi_fcr_n")
         else:
             st.subheader("Pump consumption")
             fig_pump = _line([(fi_df["pump_cons_mw"], "Pump", "#9C27B0")], "MW")
-            st.plotly_chart(fig_pump, use_container_width=True, key="fi_pump")
+            st.plotly_chart(fig_pump, width="stretch", key="fi_pump")
 
 # ── SE2 Zone ───────────────────────────────────────────────────────────────
 
@@ -358,14 +358,14 @@ with tab_se2:
             margin=dict(t=40, b=40),
             legend=dict(orientation="h", yanchor="bottom", y=1.02),
         )
-        st.plotly_chart(fig_se2, use_container_width=True, key="se2_dispatch")
+        st.plotly_chart(fig_se2, width="stretch", key="se2_dispatch")
 
         st.subheader("SE2 reservoir levels")
         fig_se2_res = _line(
             [(se2_df[f"{u}_reservoir_gwh"], u, c) for u, c in zip(unit_names, se2_colors)],
             "GWh",
         )
-        st.plotly_chart(fig_se2_res, use_container_width=True, key="se2_reservoir")
+        st.plotly_chart(fig_se2_res, width="stretch", key="se2_reservoir")
 
 # ── Bid Curves & Export ────────────────────────────────────────────────────
 
@@ -392,7 +392,7 @@ with tab_bids:
         margin=dict(t=30, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
     )
-    st.plotly_chart(fig_bids, use_container_width=True, key="bid_curves")
+    st.plotly_chart(fig_bids, width="stretch", key="bid_curves")
 
     st.subheader("Export")
     col_e1, col_e2, col_e3 = st.columns(3)
