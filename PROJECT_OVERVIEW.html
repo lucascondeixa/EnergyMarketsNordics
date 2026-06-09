@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EnergyMarketsNordics — Project Overview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #1a1a2e;
+      background: #f5f6fa;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: #fff;
+      padding: 48px 48px 40px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    header p.subtitle {
+      font-size: 16px;
+      color: #a0b4d0;
+      max-width: 680px;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      background: #0f3460;
+      border: 1px solid #2a5298;
+      color: #7eb8f7;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+
+    section { margin-bottom: 48px; }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #0f3460;
+      border-bottom: 2px solid #0f3460;
+      padding-bottom: 6px;
+      margin-bottom: 20px;
+    }
+
+    p { margin-bottom: 12px; color: #2d3561; }
+    p:last-child { margin-bottom: 0; }
+
+    /* Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e4f0;
+      border-radius: 10px;
+      padding: 20px 22px;
+    }
+
+    .card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f3460;
+      margin-bottom: 8px;
+    }
+
+    .card p, .card li { font-size: 14px; color: #444; }
+    .card ul { padding-left: 16px; }
+    .card li { margin-bottom: 4px; }
+
+    .card .zone-label {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .zone-fi { background: #e8f4fd; color: #0f3460; }
+    .zone-se2 { background: #e8fdf2; color: #0a5c36; }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #e0e4f0;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f3fb;
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #0f3460;
+      border-bottom: 1px solid #e0e4f0;
+    }
+
+    td {
+      padding: 10px 16px;
+      color: #2d3561;
+      border-bottom: 1px solid #f0f3fb;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbff; }
+
+    td.note { color: #888; font-style: italic; font-size: 13px; }
+
+    /* Status */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .status-item {
+      background: #fff;
+      border: 1px solid #e0e4f0;
+      border-radius: 10px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .status-item .label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #888;
+    }
+
+    .status-item .value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f3460;
+    }
+
+    .status-item .detail {
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* Revenue */
+    .revenue-box {
+      background: #fff;
+      border: 1px solid #e0e4f0;
+      border-radius: 10px;
+      padding: 24px 28px;
+    }
+
+    .revenue-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f3fb;
+      color: #2d3561;
+    }
+
+    .revenue-row:last-child { border-bottom: none; }
+
+    .revenue-row.total {
+      font-weight: 700;
+      font-size: 15px;
+      color: #0f3460;
+      border-top: 2px solid #0f3460;
+      margin-top: 4px;
+      padding-top: 10px;
+    }
+
+    .revenue-row.planning {
+      color: #aaa;
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    /* Roadmap */
+    .roadmap { list-style: none; }
+
+    .roadmap li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f3fb;
+      font-size: 14px;
+      color: #2d3561;
+    }
+
+    .roadmap li:last-child { border-bottom: none; }
+
+    .roadmap .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .dot-done { background: #2ecc71; }
+    .dot-next { background: #f39c12; }
+    .dot-later { background: #bdc3c7; }
+
+    .roadmap .tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 1px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .tag-done { background: #eafaf1; color: #1e8449; }
+    .tag-next { background: #fef9e7; color: #b7770d; }
+    .tag-later { background: #f2f3f4; color: #717d7e; }
+
+    /* Assumptions */
+    .assumption-list { list-style: none; }
+
+    .assumption-list li {
+      padding: 8px 0 8px 16px;
+      border-left: 3px solid #e0e4f0;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #2d3561;
+    }
+
+    .assumption-list li strong { color: #0f3460; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: #aaa;
+      border-top: 1px solid #e0e4f0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>EnergyMarketsNordics</h1>
+  <p class="subtitle">
+    Day-ahead and ancillary services bidding optimiser for a Finnish/Swedish
+    hydro-nuclear portfolio. Recommends bids for human review before submission
+    to Nord Pool and Fingrid.
+  </p>
+  <span class="badge">Decision Support Tool &mdash; v0.1</span>
+</header>
+
+<main>
+
+  <!-- PORTFOLIO -->
+  <section>
+    <h2>Portfolio</h2>
+    <div class="cards">
+
+      <div class="card">
+        <span class="zone-label zone-fi">Zone FI &mdash; Finland</span>
+        <ul>
+          <li><strong>Loviisa 1 &amp; 2</strong> &mdash; 507 MW each (VVER-440 nuclear)</li>
+          <li><strong>Vuoksi + Oulujoki hydro</strong> &mdash; 1,104 MW run-of-river</li>
+          <li><strong>Pjelax wind</strong> &mdash; 228 MW (60% Fortum share, Ostrobothnia)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="zone-label zone-se2">Zone SE2 &mdash; Sweden (V&auml;rmland)</span>
+        <ul>
+          <li><strong>Kymmen</strong> &mdash; 50 MW pump storage</li>
+          <li><strong>Letten</strong> &mdash; 34 MW pump storage</li>
+          <li><strong>Eggsjön</strong> &mdash; 0.55 MW pump storage</li>
+        </ul>
+        <p style="margin-top:10px; font-size:13px; color:#888;">
+          Seasonal arbitrage only &mdash; independent from FI optimisation.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Not yet modelled</h3>
+        <ul>
+          <li><strong>Kemijoki Oy</strong> &mdash; 57% stake, ~3,550 MW across 20 plants</li>
+          <li>CHP plants (heat-network driven, not independently optimised)</li>
+        </ul>
+        <p style="margin-top:10px; font-size:13px; color:#888;">
+          Planned for Phase 2 (requires Kemijoki-specific reservoir data).
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- WHAT IT DOES -->
+  <section>
+    <h2>What it does</h2>
+    <p>
+      The optimiser solves a <strong>7-day rolling Mixed Integer Linear Programme (MILP)</strong>
+      across a 168-hour horizon at hourly resolution. For each run it produces:
+    </p>
+    <div class="cards" style="margin-top:16px;">
+      <div class="card">
+        <h3>FI Zone</h3>
+        <ul>
+          <li>Nuclear unit commitment (start/stop, min run times, ramp limits, planned outages)</li>
+          <li>Hydro reservoir scheduling (inflow, storage dynamics, dispatch timing)</li>
+          <li>Wind must-take allocation</li>
+          <li>FCR-N ancillary service capacity bids (Fingrid frequency reserve)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>SE2 Zone</h3>
+        <ul>
+          <li>Pump storage arbitrage (buy cheap, sell high within reservoir limits)</li>
+          <li>Round-trip efficiency and ramp constraints applied</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Output</h3>
+        <ul>
+          <li>Hourly dispatch schedule (CSV)</li>
+          <li>10-step Elspot bid curves (CSV, ready for manual submission)</li>
+          <li>Revenue breakdown — cash generation vs. planning credits</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATUS -->
+  <section>
+    <h2>Current status</h2>
+    <div class="status-grid">
+      <div class="status-item">
+        <span class="label">Tests passing</span>
+        <span class="value">34 / 34</span>
+        <span class="detail">Full suite, both zones</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Solve time</span>
+        <span class="value">&lt; 1s</span>
+        <span class="detail">FI 0.6s + SE2 0.1s (HiGHS MILP)</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Price data</span>
+        <span class="value">Live</span>
+        <span class="detail">ENTSO-E API + seasonal forecaster</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Horizon</span>
+        <span class="value">168 h</span>
+        <span class="detail">7-day rolling, hourly resolution</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- INDICATIVE REVENUE -->
+  <section>
+    <h2>Indicative 7-day revenue (current market conditions)</h2>
+    <p style="margin-bottom:16px; font-size:14px;">
+      Based on ENTSO-E live prices (~65 EUR/MWh FI average, June 2026).
+      Cash revenue excludes the terminal water value planning credit.
+    </p>
+    <div class="revenue-box">
+      <div class="revenue-row"><span>FI &mdash; Elspot generation</span><span>EUR 18,700,000</span></div>
+      <div class="revenue-row"><span>FI &mdash; FCR-N ancillary services (avg 14 MW)</span><span>EUR 12,000</span></div>
+      <div class="revenue-row"><span>SE2 &mdash; Pump storage arbitrage</span><span>EUR 1,820,000</span></div>
+      <div class="revenue-row total"><span>Portfolio cash total (7 days)</span><span>EUR 20,500,000</span></div>
+      <div class="revenue-row planning"><span>Terminal water value credit (planning only, not cash)</span><span>EUR 23,200,000</span></div>
+    </div>
+  </section>
+
+  <!-- KEY ASSUMPTIONS -->
+  <section>
+    <h2>Key assumptions</h2>
+    <ul class="assumption-list">
+      <li>
+        <strong>Hydro dispatch threshold &mdash; 61 EUR/MWh.</strong>
+        The terminal water value is set at 55 EUR/MWh (÷ 0.90 turbine efficiency = 61 EUR/MWh marginal cost).
+        The optimiser only dispatches hydro when the Elspot price exceeds this threshold.
+        If market prices shift significantly, this parameter should be reviewed.
+      </li>
+      <li>
+        <strong>Reservoir initial fill &mdash; 85% (425 GWh of 500 GWh).</strong>
+        Reflects post-spring-flood high-water conditions in June. Should be updated
+        from actual SCADA data before use in other seasons.
+      </li>
+      <li>
+        <strong>Kemijoki Oy excluded.</strong>
+        Fortum's 57% stake in Kemijoki Oy (~3,550 MW, 20 plants) is not modelled.
+        Including it would require Kemijoki-specific reservoir and inflow data. This is the
+        largest single gap between the model and Fortum's real Finnish portfolio.
+      </li>
+      <li>
+        <strong>Single aggregated FI reservoir.</strong>
+        Vuoksi and Oulujoki are modelled as one combined reservoir (500 GWh, Oulujärvi).
+        In reality they are separate river systems with correlated but distinct spring flood timing.
+      </li>
+      <li>
+        <strong>Price forecast &mdash; seasonal median + level correction.</strong>
+        Beyond confirmed D+1 ENTSO-E prices (~12 real hours), the horizon is filled using a
+        90-day historical median profile adjusted to the last 7 days of actual prices.
+        This captures the current price regime but not short-term fundamental drivers
+        (hydro balance, wind outlook, cross-border flows).
+      </li>
+      <li>
+        <strong>FCR-N only for ancillary services.</strong>
+        FCR-D, aFRR, and mFRR are modelled in the config but not yet enabled.
+        FCR-N is currently the highest-value ancillary service for flexible hydro in Finland.
+      </li>
+      <li>
+        <strong>Wind is must-take.</strong>
+        Pjelax wind output is treated as a non-dispatchable input — always dispatched at
+        floor price. Curtailment is not modelled.
+      </li>
+      <li>
+        <strong>SE2 reservoir sizes are stylised.</strong>
+        Kymmen, Letten, and Eggsjön reservoir capacities are estimates.
+        Replace with Fortum SCADA data for production use.
+      </li>
+    </ul>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <h2>Roadmap</h2>
+    <ul class="roadmap">
+      <li>
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        FI MILP &mdash; nuclear unit commitment + hydro reservoir + wind must-take
+      </li>
+      <li>
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        SE2 pump storage arbitrage MILP (Kymmen, Letten, Eggsjön)
+      </li>
+      <li>
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        FCR-N ancillary service bidding (Fingrid frequency reserve)
+      </li>
+      <li>
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        Live ENTSO-E price ingestion + seasonal forecaster for remaining horizon
+      </li>
+      <li>
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        Cash revenue vs. terminal water value split in reporting
+      </li>
+      <li>
+        <span class="dot dot-next"></span>
+        <span class="tag tag-next">Next</span>
+        Kemijoki Oy hydro module (57% stake, 20 plants, Kemijoki river)
+      </li>
+      <li>
+        <span class="dot dot-next"></span>
+        <span class="tag tag-next">Next</span>
+        Real hydro inflow data from SYKE (Finnish Environment Institute)
+      </li>
+      <li>
+        <span class="dot dot-later"></span>
+        <span class="tag tag-later">Later</span>
+        FCR-D upward/downward and aFRR ancillary service markets
+      </li>
+      <li>
+        <span class="dot dot-later"></span>
+        <span class="tag tag-later">Later</span>
+        Streamlit dashboard for interactive bid review
+      </li>
+      <li>
+        <span class="dot dot-later"></span>
+        <span class="tag tag-later">Later</span>
+        Intraday (Elbas) re-optimisation layer
+      </li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  EnergyMarketsNordics &mdash; last updated 2026-06-09
+</footer>
+
+</body>
+</html>
