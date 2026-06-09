@@ -71,7 +71,7 @@ src/
   bidding/
     exporter.py         # CSV and bid-curve export
   reporting/
-    dashboard.py        # Streamlit bid-review dashboard (stub, Phase 2)
+    dashboard.py        # Streamlit bid-review dashboard
   utils/
     schema.py           # Pydantic config and result schemas
     time_utils.py       # Horizon building, synthetic series
@@ -118,8 +118,17 @@ Key parameters in `configs/plant_params.yaml`:
 ## Phase 2 roadmap
 
 - FCR-D and aFRR ancillary service markets
-- Streamlit dashboard (`src/reporting/dashboard.py` stub exists)
 - Intraday (Elbas) re-optimisation layer
+
+## Dashboard
+
+Interactive bid-review dashboard (portfolio dispatch, reservoir levels, FCR-N, SE2 pump, bid curves, CSV export):
+
+```
+streamlit run src/reporting/dashboard.py
+```
+
+Sidebar controls: price source (live ENTSO-E or synthetic), horizon, terminal water value slider, FCR-N hydro cap slider.
 
 ## Requirements
 
