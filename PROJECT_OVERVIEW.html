@@ -325,8 +325,8 @@
           <li>CHP plants (heat-network driven, not independently optimised)</li>
         </ul>
         <p style="margin-top:10px; font-size:13px; color:#888;">
-          Kemijoki Oy is now modelled as an aggregated block. Named plant-level
-          chains and real inflow data are planned for a later phase.
+          Kemijoki Oy is now modelled as an aggregated block. Inflow uses SYKE level-correction
+          (real discharge history). Named plant-level chains are planned for a later phase.
         </p>
       </div>
 
@@ -374,8 +374,8 @@
     <div class="status-grid">
       <div class="status-item">
         <span class="label">Tests passing</span>
-        <span class="value">42 / 42</span>
-        <span class="detail">Full suite, both zones</span>
+        <span class="value">55 / 55</span>
+        <span class="detail">Full suite, both zones + SYKE client</span>
       </div>
       <div class="status-item">
         <span class="label">Solve time</span>
@@ -499,13 +499,13 @@
         Kemijoki Oy hydro module (57% stake, aggregated 630 MW / 480 GWh block)
       </li>
       <li>
-        <span class="dot dot-next"></span>
-        <span class="tag tag-next">Next</span>
-        Real hydro inflow data from SYKE (Finnish Environment Institute)
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        Real hydro inflow from SYKE OData API — level-correction forecaster for Kemijoki (ID 1388) and Oulujoki (ID 1314)
       </li>
       <li>
-        <span class="dot dot-later"></span>
-        <span class="tag tag-later">Later</span>
+        <span class="dot dot-next"></span>
+        <span class="tag tag-next">Next</span>
         FCR-D upward/downward and aFRR ancillary service markets
       </li>
       <li>
@@ -524,7 +524,7 @@
 </main>
 
 <footer>
-  EnergyMarketsNordics &mdash; last updated 2026-06-09 (Kemijoki Oy module)
+  EnergyMarketsNordics &mdash; last updated 2026-06-09 (SYKE inflow integration)
 </footer>
 
 </body>

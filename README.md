@@ -24,7 +24,7 @@ Day-ahead prices are fetched from the **ENTSO-E Transparency Platform** (free AP
 2. Median profile by `(hour_of_day, day_of_week)` — 168 calendar bins
 3. Level correction anchored to the last 7 days of actuals (corrects for current price regime)
 
-FCR-N and hydro inflow forecasts remain synthetic (seasonal models); real sources are planned for Phase 2.
+FCR-N capacity prices remain synthetic (seasonal model). Hydro inflow uses a **SYKE level-correction approach**: the `SYKEInflowForecaster` fetches 3 years of daily discharge from the Finnish Environment Institute OData API for Kemijoki/Isohaara (ID 1388) and Oulujoki/Merikoski (ID 1314), builds a day-of-year median profile, and applies the recent/historical ratio as a scalar to the synthetic seasonal curve. Falls back to pure synthetic if the API is unreachable.
 
 ## Quickstart
 
@@ -60,6 +60,7 @@ src/
     nordpool.py         # ENTSO-E Transparency API client
     fingrid.py          # Fingrid Open Data API client
     price_forecast.py   # SeasonalPriceForecaster (90-day + level correction)
+    syke.py             # SYKE OData client + inflow level-correction forecaster
     forecasts.py        # Forecast adapter (api / forecast / synthetic / CSV)
   markets/
     elspot.py           # Elspot revenue and bid curve construction
@@ -79,7 +80,7 @@ configs/
   plant_params.yaml     # Asset parameters (capacity, costs, reservoir, inflow)
   market_params.yaml    # Market rules (price caps, FCR-N limits, solver settings)
 
-tests/                  # 42 unit tests (pytest)
+tests/                  # 55 unit tests (pytest)
 notebooks/              # Exploratory analysis (Fingrid data, prices, results)
 ```
 
@@ -116,7 +117,6 @@ Key parameters in `configs/plant_params.yaml`:
 
 ## Phase 2 roadmap
 
-- Real hydro inflow from SYKE (Finnish Environment Institute)
 - FCR-D and aFRR ancillary service markets
 - Streamlit dashboard (`src/reporting/dashboard.py` stub exists)
 - Intraday (Elbas) re-optimisation layer
