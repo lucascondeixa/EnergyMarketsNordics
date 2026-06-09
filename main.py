@@ -152,17 +152,19 @@ def run(
     console.rule("[bold]Portfolio Summary[/bold]")
     print_summary(fi_df, fi_result.objective_value_eur)
 
-    total_revenue = fi_result.objective_value_eur + se2_revenue
-    console.print(f"\n[bold]7-day Expected Revenue[/bold]")
-    console.print(f"  FI  Elspot (net generation):  EUR {fi_result.objective_value_eur - fi_result.fcr_n_revenue_eur:>12,.0f}")
+    fi_cash_total = fi_result.elspot_cash_revenue_eur + fi_result.fcr_n_revenue_eur
+    total_cash = fi_cash_total + se2_revenue
+    console.print(f"\n[bold]7-day Expected Revenue (cash)[/bold]")
+    console.print(f"  FI  Elspot generation:        EUR {fi_result.elspot_cash_revenue_eur:>12,.0f}")
     if fi_result.fcr_n_revenue_eur > 0:
         avg_fcr_n = sum(fi_result.fcr_n_total_mw) / len(fi_result.fcr_n_total_mw)
         console.print(f"  FI  FCR-N capacity (avg {avg_fcr_n:.0f} MW): EUR {fi_result.fcr_n_revenue_eur:>12,.0f}")
-    console.print(f"  FI  Total:                    EUR {fi_result.objective_value_eur:>12,.0f}")
+    console.print(f"  FI  Total cash:               EUR {fi_cash_total:>12,.0f}")
     if se2_result:
         console.print(f"  SE2 Pump arb:                 EUR {se2_revenue:>12,.0f}")
     console.print(f"  ─────────────────────────────────────────────")
-    console.print(f"  Portfolio total:              EUR {total_revenue:>12,.0f}")
+    console.print(f"  Portfolio cash total:         EUR {total_cash:>12,.0f}")
+    console.print(f"  [dim]Terminal water credit:       EUR {fi_result.terminal_water_value_eur:>12,.0f}  (planning only)[/dim]")
 
     typer.echo(f"\nFI solve:   {fi_result.solve_time_seconds:.1f}s  ({fi_result.status})")
     if se2_result:

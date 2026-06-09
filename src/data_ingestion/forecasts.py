@@ -19,7 +19,8 @@ import numpy as np
 import pandas as pd
 
 from src.data_ingestion.fingrid import FingridClient
-from src.data_ingestion.nordpool import NordPoolClient, SWEDEN_SE2_AREA_CODE
+from src.data_ingestion.nordpool import NordPoolClient, FINLAND_AREA_CODE, SWEDEN_SE2_AREA_CODE
+from src.data_ingestion.price_forecast import SeasonalPriceForecaster
 from src.utils.schema import HydroInflowConfig, WindFarmConfig
 from src.utils.time_utils import synthetic_inflow_series, synthetic_price_series
 
@@ -67,6 +68,26 @@ def load_price_forecast(
             log.error("ENTSO-E fetch failed (%s); falling back to synthetic", exc)
             return synthetic_price_series(horizon_index)
         return _merge_real_and_synthetic(raw, horizon_index, synthetic_price_series)
+
+    if str(source) == "forecast":
+        log.info("Fitting seasonal price forecaster for FI (90-day history + level correction)")
+        try:
+            forecaster = SeasonalPriceForecaster()
+            forecaster.fit(area=FINLAND_AREA_CODE)
+            forecast = forecaster.predict(horizon_index)
+        except Exception as exc:
+            log.error("SeasonalPriceForecaster failed (%s); falling back to synthetic", exc)
+            return synthetic_price_series(horizon_index)
+        # Blend: real ENTSO-E prices where available, forecaster elsewhere
+        client = NordPoolClient()
+        start = horizon_index[0].to_pydatetime()
+        end = (horizon_index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+        try:
+            raw = client.get_day_ahead_prices(start, end)
+            return _merge_real_and_synthetic(raw, horizon_index, lambda idx: forecaster.predict(idx))
+        except Exception as exc:
+            log.warning("ENTSO-E live fetch failed (%s); using forecaster only", exc)
+            return forecast
 
     path = Path(source)
     if not path.exists():
@@ -268,6 +289,28 @@ def load_se2_price_forecast(
         fallback = (lambda idx: _synthetic_se2_price(idx, fi_price_series)
                     if fi_price_series is not None else synthetic_price_series(idx))
         return _merge_real_and_synthetic(raw, horizon_index, fallback)
+
+    if str(source) == "forecast":
+        log.info("Fitting seasonal price forecaster for SE2 (90-day history + level correction)")
+        try:
+            forecaster = SeasonalPriceForecaster()
+            forecaster.fit(area=SWEDEN_SE2_AREA_CODE)
+            forecast = forecaster.predict(horizon_index)
+        except Exception as exc:
+            log.error("SE2 SeasonalPriceForecaster failed (%s); falling back to synthetic", exc)
+            if fi_price_series is not None:
+                return _synthetic_se2_price(horizon_index, fi_price_series)
+            return synthetic_price_series(horizon_index)
+        # Blend: real ENTSO-E prices where available, forecaster elsewhere
+        client = NordPoolClient()
+        start = horizon_index[0].to_pydatetime()
+        end = (horizon_index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+        try:
+            raw = client.get_day_ahead_prices(start, end, area=SWEDEN_SE2_AREA_CODE)
+            return _merge_real_and_synthetic(raw, horizon_index, lambda idx: forecaster.predict(idx))
+        except Exception as exc:
+            log.warning("ENTSO-E SE2 live fetch failed (%s); using forecaster only", exc)
+            return forecast
 
     if str(source) == "synthetic":
         if fi_price_series is None:

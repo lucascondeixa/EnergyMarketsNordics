@@ -150,6 +150,9 @@ def build_and_solve(
     elspot_bid = [pyo.value(model.elspot_bid[t]) for t in model.T]
     obj_val = pyo.value(model.objective)
 
+    elspot_cash = sum(pyo.value(model.elspot_revenue_expr[t]) for t in model.T)
+    terminal_wv = pyo.value(model.terminal_water_value) * pyo.value(model.reservoir[T_last])
+
     # FCR-N results
     if fcr_n_enabled:
         fcr_n_hydro = [pyo.value(model.r_fcr_n_hydro[t]) for t in model.T]
@@ -173,6 +176,8 @@ def build_and_solve(
     return model, OptimisationResult(
         solve_time_seconds=round(solve_time, 2),
         objective_value_eur=round(obj_val, 2),
+        elspot_cash_revenue_eur=round(elspot_cash, 2),
+        terminal_water_value_eur=round(terminal_wv, 2),
         mip_gap=mip_gap,
         status=str(term_cond),
         hydro_dispatch_mw=hydro_gen,

@@ -170,7 +170,9 @@ class OptimisationResult(BaseModel):
     """Output of the FI joint optimiser run."""
 
     solve_time_seconds: float
-    objective_value_eur: float
+    objective_value_eur: float          # planning objective (includes terminal water value credit)
+    elspot_cash_revenue_eur: float      # actual cash Elspot revenue (excludes terminal water value)
+    terminal_water_value_eur: float     # terminal reservoir credit (planning, not cash)
     mip_gap: float | None
     status: str
     hydro_dispatch_mw: list[float]

@@ -6,11 +6,12 @@ hydro:
   pump_storage_enabled: false   # Fortum has no pump storage in Finland (Kemijoki Oy exploring Ailangantunturi ~2032)
 
   turbine:
-    # Vuoksi (254 MW) + Oulujoki (~850 MW) + Kemijoki Oy 57% share (~641 MW = 57% × ~1,125 MW total)
-    capacity_mw: 1745
+    # Vuoksi (254 MW) + Oulujoki (~850 MW) — direct Fortum ownership only
+    # Kemijoki Oy 57% stake excluded (see Phase 2 note at bottom of file)
+    capacity_mw: 1104
     min_output_mw: 0
     efficiency: 0.90
-    ramp_rate_mw_per_hour: 870  # ~50% of combined capacity per hour
+    ramp_rate_mw_per_hour: 552  # ~50% of 1104 MW per hour
 
   pump:                         # Kept for future use (Kemijoki Oy pumped storage, earliest ~2032)
     capacity_mw: 0
@@ -18,20 +19,20 @@ hydro:
     efficiency: 0.85
 
   reservoir:
-    # Oulujärvi (~500 GWh usable) + Kemijärvi 57% share (~480 GWh = 57% × ~850 GWh seasonal storage)
-    # Note: single aggregated reservoir is a simplification — two separate river systems
-    # with correlated but distinct spring flood timing. Split into named blocks in Phase 2.
-    capacity_gwh: 980.0
-    min_level_gwh: 100.0
-    initial_level_gwh: 490.0    # 50% fill at start
-    terminal_water_value_eur_per_mwh: 30.0
+    # Oulujärvi (~500 GWh usable seasonal storage) — direct Fortum ownership only
+    # Kemijärvi excluded (Kemijoki Oy Phase 2). Single reservoir is a simplification
+    # of the Vuoksi chain + Oulujoki system — split into named chains in Phase 2.
+    capacity_gwh: 500.0
+    min_level_gwh: 50.0
+    initial_level_gwh: 425.0    # ~85% fill — post-spring-flood high water in June
+    terminal_water_value_eur_per_mwh: 55.0  # ~long-run water value; sets hydro threshold at ~61 EUR/MWh
 
   inflow:
-    # Vuoksi/Oulujoki: ~3 TWh/year → 0.34 GWh/h
-    # Kemijoki 57%: ~1.9 TWh/year → 0.22 GWh/h  (total Kemijoki Oy ~3.4 TWh/year)
-    annual_avg_gwh_per_hour: 0.56
-    seasonal_amplitude: 0.70    # Both systems have strong spring floods; Kemijoki slightly earlier
-    peak_day_of_year: 137       # ~May 17 (weighted average of Oulujoki day 140, Kemijoki day 133)
+    # Vuoksi + Oulujoki direct portfolio: ~3 TWh/year → 0.34 GWh/h annual average
+    # (Kemijoki excluded — Phase 2)
+    annual_avg_gwh_per_hour: 0.34
+    seasonal_amplitude: 0.60    # Oulujoki spring flood strong but less extreme than Kemijoki
+    peak_day_of_year: 140       # ~May 20 (Oulujoki/Vuoksi spring snowmelt peak)
 
 nuclear:
   # Loviisa Nuclear Power Plant — Fortum 100% owner/operator

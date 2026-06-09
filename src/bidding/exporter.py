@@ -52,7 +52,7 @@ def print_summary(result_df: pd.DataFrame, objective_eur: float) -> None:
 
     console = Console()
     console.print(f"\n[bold green]Optimisation Result[/bold green]")
-    console.print(f"Expected revenue (7-day):  EUR {objective_eur:,.0f}")
+    console.print(f"Planning objective (7-day): EUR {objective_eur:,.0f}  [dim](incl. terminal water value)[/dim]")
     console.print(f"\n[bold]Day 1 summary:[/bold]")
 
     table = Table(show_header=True, header_style="bold cyan")
