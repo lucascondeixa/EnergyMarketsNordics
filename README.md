@@ -69,6 +69,8 @@ src/
     pump_arb_optimizer.py  # SE2 pump storage arbitrage MILP
   bidding/
     exporter.py         # CSV and bid-curve export
+  reporting/
+    dashboard.py        # Streamlit bid-review dashboard (stub, Phase 2)
   utils/
     schema.py           # Pydantic config and result schemas
     time_utils.py       # Horizon building, synthetic series
