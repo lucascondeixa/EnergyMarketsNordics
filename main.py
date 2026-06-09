@@ -90,9 +90,17 @@ def run(
     # Load forecasts
     # -----------------------------------------------------------------------
     price_fi = load_price_forecast(price_fi_csv, index)
-    inflow = load_inflow_forecast(inflow_csv, index, inflow_cfg=plant_cfg.hydro.inflow)
+    inflow = load_inflow_forecast(
+        inflow_csv, index,
+        inflow_cfg=plant_cfg.hydro.inflow,
+        syke_station_id=plant_cfg.hydro.syke_station_id,
+    )
     kemijoki_inflow = (
-        load_inflow_forecast(inflow_csv, index, inflow_cfg=plant_cfg.kemijoki.inflow)
+        load_inflow_forecast(
+            inflow_csv, index,
+            inflow_cfg=plant_cfg.kemijoki.inflow,
+            syke_station_id=plant_cfg.kemijoki.syke_station_id,
+        )
         if plant_cfg.kemijoki is not None else None
     )
     wind = load_wind_forecast(wind_csv, index, wind_cfgs=plant_cfg.wind)

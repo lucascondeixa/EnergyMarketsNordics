@@ -46,6 +46,7 @@ class HydroConfig(BaseModel):
     pump: HydroPumpConfig
     reservoir: HydroReservoirConfig
     inflow: HydroInflowConfig
+    syke_station_id: int | None = None
 
 
 class PlannedOutage(BaseModel):

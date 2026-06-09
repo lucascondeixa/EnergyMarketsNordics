@@ -4,6 +4,7 @@
 
 hydro:
   pump_storage_enabled: false   # Fortum has no pump storage in Finland (Kemijoki Oy exploring Ailangantunturi ~2032)
+  syke_station_id: 1314         # Oulujoki, Merikoski — proxy for Vuoksi+Oulujoki combined block
 
   turbine:
     # Vuoksi (254 MW) + Oulujoki (~850 MW) — direct Fortum ownership only
@@ -133,6 +134,7 @@ kemijoki:
   # Replace with SCADA data for production use.
 
   pump_storage_enabled: false   # Ailangantunturi pumped storage under study (~2032)
+  syke_station_id: 1388         # Kemijoki, Isohaara (river mouth — total catchment discharge)
 
   turbine:
     # ~1,105 MW total across Kemijoki Oy fleet; Fortum 57% share ~630 MW

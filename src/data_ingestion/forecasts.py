@@ -21,6 +21,7 @@ import pandas as pd
 from src.data_ingestion.fingrid import FingridClient
 from src.data_ingestion.nordpool import NordPoolClient, FINLAND_AREA_CODE, SWEDEN_SE2_AREA_CODE
 from src.data_ingestion.price_forecast import SeasonalPriceForecaster
+from src.data_ingestion.syke import SYKEInflowForecaster
 from src.utils.schema import HydroInflowConfig, WindFarmConfig
 from src.utils.time_utils import synthetic_inflow_series, synthetic_price_series
 
@@ -109,22 +110,34 @@ def load_inflow_forecast(
     source: str | Path,
     horizon_index: pd.DatetimeIndex,
     inflow_cfg: HydroInflowConfig | None = None,
+    syke_station_id: int | None = None,
 ) -> pd.Series:
     """Load a hydro inflow forecast (GWh/h, water-equivalent) aligned to *horizon_index*.
 
-    *source*: "synthetic" (requires *inflow_cfg*) or path to CSV with columns
+    *source*: "synthetic" (requires *inflow_cfg*), "api" (SYKE level correction
+    if *syke_station_id* provided, else synthetic), or path to CSV with columns
     'timestamp', 'inflow_gwh_per_h'.
     """
     if str(source) == "api":
-        log.info("Real hydro inflow not available via API; using synthetic inflow (SYKE integration is Phase 2)")
         if inflow_cfg is None:
-            raise ValueError("inflow_cfg required for synthetic inflow fallback")
-        return synthetic_inflow_series(
+            raise ValueError("inflow_cfg required for inflow forecast")
+        synthetic = synthetic_inflow_series(
             horizon_index,
             annual_avg_gwh_per_hour=inflow_cfg.annual_avg_gwh_per_hour,
             seasonal_amplitude=inflow_cfg.seasonal_amplitude,
             peak_day_of_year=inflow_cfg.peak_day_of_year,
         )
+        if syke_station_id is None:
+            log.info("No SYKE station configured; using synthetic inflow")
+            return synthetic
+        log.info("Fetching SYKE discharge history for station %d", syke_station_id)
+        try:
+            forecaster = SYKEInflowForecaster(station_id=syke_station_id)
+            forecaster.fit()
+            return forecaster.apply(synthetic)
+        except Exception as exc:
+            log.error("SYKE inflow correction failed (%s); falling back to synthetic", exc)
+            return synthetic
 
     if str(source) == "synthetic":
         if inflow_cfg is None:
