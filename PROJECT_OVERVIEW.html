@@ -302,6 +302,7 @@
         <ul>
           <li><strong>Loviisa 1 &amp; 2</strong> &mdash; 507 MW each (VVER-440 nuclear)</li>
           <li><strong>Vuoksi + Oulujoki hydro</strong> &mdash; 1,104 MW run-of-river</li>
+          <li><strong>Kemijoki Oy hydro</strong> &mdash; 630 MW (57% stake, aggregated)</li>
           <li><strong>Pjelax wind</strong> &mdash; 228 MW (60% Fortum share, Ostrobothnia)</li>
         </ul>
       </div>
@@ -321,11 +322,11 @@
       <div class="card">
         <h3>Not yet modelled</h3>
         <ul>
-          <li><strong>Kemijoki Oy</strong> &mdash; 57% stake, ~3,550 MW across 20 plants</li>
           <li>CHP plants (heat-network driven, not independently optimised)</li>
         </ul>
         <p style="margin-top:10px; font-size:13px; color:#888;">
-          Planned for Phase 2 (requires Kemijoki-specific reservoir data).
+          Kemijoki Oy is now modelled as an aggregated block. Named plant-level
+          chains and real inflow data are planned for a later phase.
         </p>
       </div>
 
@@ -373,7 +374,7 @@
     <div class="status-grid">
       <div class="status-item">
         <span class="label">Tests passing</span>
-        <span class="value">34 / 34</span>
+        <span class="value">42 / 42</span>
         <span class="detail">Full suite, both zones</span>
       </div>
       <div class="status-item">
@@ -399,14 +400,15 @@
     <h2>Indicative 7-day revenue (current market conditions)</h2>
     <p style="margin-bottom:16px; font-size:14px;">
       Based on ENTSO-E live prices (~65 EUR/MWh FI average, June 2026).
+      Now includes Kemijoki Oy hydro (630 MW aggregated block).
       Cash revenue excludes the terminal water value planning credit.
     </p>
     <div class="revenue-box">
-      <div class="revenue-row"><span>FI &mdash; Elspot generation</span><span>EUR 18,700,000</span></div>
-      <div class="revenue-row"><span>FI &mdash; FCR-N ancillary services (avg 14 MW)</span><span>EUR 12,000</span></div>
+      <div class="revenue-row"><span>FI &mdash; Elspot generation (incl. Kemijoki)</span><span>EUR 25,000,000</span></div>
+      <div class="revenue-row"><span>FI &mdash; FCR-N ancillary services (avg 16 MW)</span><span>EUR 14,000</span></div>
       <div class="revenue-row"><span>SE2 &mdash; Pump storage arbitrage</span><span>EUR 1,820,000</span></div>
-      <div class="revenue-row total"><span>Portfolio cash total (7 days)</span><span>EUR 20,500,000</span></div>
-      <div class="revenue-row planning"><span>Terminal water value credit (planning only, not cash)</span><span>EUR 23,200,000</span></div>
+      <div class="revenue-row total"><span>Portfolio cash total (7 days)</span><span>EUR 26,800,000</span></div>
+      <div class="revenue-row planning"><span>Terminal water value credit (planning only, not cash)</span><span>EUR 42,500,000</span></div>
     </div>
   </section>
 
@@ -426,10 +428,11 @@
         from actual SCADA data before use in other seasons.
       </li>
       <li>
-        <strong>Kemijoki Oy excluded.</strong>
-        Fortum's 57% stake in Kemijoki Oy (~3,550 MW, 20 plants) is not modelled.
-        Including it would require Kemijoki-specific reservoir and inflow data. This is the
-        largest single gap between the model and Fortum's real Finnish portfolio.
+        <strong>Kemijoki Oy modelled as a single aggregated block (630 MW / 480 GWh).</strong>
+        Fortum's 57% share of the ~20-plant Kemijoki river fleet is represented as one
+        combined turbine and reservoir using public capacity estimates. Individual plant
+        cascades, inter-reservoir constraints, and plant-specific inflow profiles are not
+        captured — these would require Kemijoki SCADA data.
       </li>
       <li>
         <strong>Single aggregated FI reservoir.</strong>
@@ -491,9 +494,9 @@
         Cash revenue vs. terminal water value split in reporting
       </li>
       <li>
-        <span class="dot dot-next"></span>
-        <span class="tag tag-next">Next</span>
-        Kemijoki Oy hydro module (57% stake, 20 plants, Kemijoki river)
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        Kemijoki Oy hydro module (57% stake, aggregated 630 MW / 480 GWh block)
       </li>
       <li>
         <span class="dot dot-next"></span>
@@ -521,7 +524,7 @@
 </main>
 
 <footer>
-  EnergyMarketsNordics &mdash; last updated 2026-06-09
+  EnergyMarketsNordics &mdash; last updated 2026-06-09 (Kemijoki Oy module)
 </footer>
 
 </body>

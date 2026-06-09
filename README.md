@@ -6,7 +6,7 @@ Day-ahead and ancillary services bidding optimiser for a Finnish/Swedish hydro-n
 
 | Zone | Assets |
 |------|--------|
-| **FI** | Loviisa 1 & 2 nuclear (507 MW each) · Vuoksi + Oulujoki hydro (1,104 MW) · Pjelax wind (228 MW, 60% Fortum share) |
+| **FI** | Loviisa 1 & 2 nuclear (507 MW each) · Vuoksi + Oulujoki hydro (1,104 MW) · Kemijoki Oy hydro (630 MW, 57% share) · Pjelax wind (228 MW, 60% Fortum share) |
 | **SE2** | Kymmen (50 MW) + Letten (34 MW) + Eggsjön (0.55 MW) pump storage — arbitrage only |
 
 ## What it does
@@ -77,7 +77,7 @@ configs/
   plant_params.yaml     # Asset parameters (capacity, costs, reservoir, inflow)
   market_params.yaml    # Market rules (price caps, FCR-N limits, solver settings)
 
-tests/                  # 34 unit tests (pytest)
+tests/                  # 42 unit tests (pytest)
 notebooks/              # Exploratory analysis (Fingrid data, prices, results)
 ```
 
@@ -104,15 +104,16 @@ Key parameters in `configs/plant_params.yaml`:
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| Hydro capacity | 1,104 MW | Vuoksi + Oulujoki direct ownership; Kemijoki Oy (57% stake, ~3,550 MW) is Phase 2 |
-| Reservoir | 500 GWh | Oulujärvi usable storage |
-| Terminal water value | 55 EUR/MWh | Sets hydro dispatch threshold at ~61 EUR/MWh |
+| Hydro capacity (Vuoksi/Oulujoki) | 1,104 MW | Direct Fortum ownership (Vuoksi 254 MW + Oulujoki ~850 MW) |
+| Reservoir (Vuoksi/Oulujoki) | 500 GWh | Oulujärvi usable storage |
+| Kemijoki capacity | 630 MW | Fortum 57% share of Kemijoki Oy fleet (~20 plants); aggregated block |
+| Kemijoki reservoir | 480 GWh | 57% share of Kemijärvi seasonal storage (~840 GWh total) |
+| Terminal water value | 55 EUR/MWh | Applied to both hydro blocks; sets dispatch threshold at ~61 EUR/MWh |
 | Nuclear capacity | 507 MW × 2 | Loviisa 1 & 2; turbine upgrade (+38 MW/unit) modelled from 2026 |
 | Nuclear variable cost | 7 EUR/MWh | Fuel + variable O&M |
 
 ## Phase 2 roadmap
 
-- Kemijoki Oy co-owned hydro (~57% stake, 20 plants on Kemijoki river)
 - Real hydro inflow from SYKE (Finnish Environment Institute)
 - FCR-D and aFRR ancillary service markets
 - Streamlit dashboard (`src/reporting/dashboard.py` stub exists)
