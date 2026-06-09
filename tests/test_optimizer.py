@@ -127,7 +127,8 @@ def test_wind_schedule_non_negative(optimisation_result):
 
 def test_elspot_bid_equals_net_generation(optimisation_result):
     _, _, df, _ = optimisation_result
-    net = df["hydro_gen_mw"] + df["nuclear_gen_mw"] + df["wind_mw"] - df["pump_cons_mw"]
+    kemijoki = df.get("kemijoki_gen_mw", 0.0)
+    net = df["hydro_gen_mw"] + kemijoki + df["nuclear_gen_mw"] + df["wind_mw"] - df["pump_cons_mw"]
     diff = (df["elspot_bid_mw"] - net).abs()
     assert diff.max() < 1e-2, "Elspot bid does not match net generation"
 

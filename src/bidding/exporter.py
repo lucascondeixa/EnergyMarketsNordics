@@ -55,22 +55,31 @@ def print_summary(result_df: pd.DataFrame, objective_eur: float) -> None:
     console.print(f"Planning objective (7-day): EUR {objective_eur:,.0f}  [dim](incl. terminal water value)[/dim]")
     console.print(f"\n[bold]Day 1 summary:[/bold]")
 
+    has_kemijoki = "kemijoki_gen_mw" in result_df.columns and result_df["kemijoki_gen_mw"].any()
+
     table = Table(show_header=True, header_style="bold cyan")
     table.add_column("Hour", style="dim", width=6)
     table.add_column("Hydro (MW)", justify="right")
+    if has_kemijoki:
+        table.add_column("Kemijoki (MW)", justify="right")
     table.add_column("Pump (MW)", justify="right")
     table.add_column("Nuclear (MW)", justify="right")
     table.add_column("Elspot bid (MW)", justify="right")
     table.add_column("Reservoir (GWh)", justify="right")
 
     for ts, row in day1.iterrows():
-        table.add_row(
+        cells = [
             str(getattr(ts, "hour", "-")),
             f"{row['hydro_gen_mw']:.1f}",
+        ]
+        if has_kemijoki:
+            cells.append(f"{row['kemijoki_gen_mw']:.1f}")
+        cells += [
             f"{row['pump_cons_mw']:.1f}",
             f"{row['nuclear_gen_mw']:.1f}",
             f"{row['elspot_bid_mw']:.1f}",
             f"{row['reservoir_gwh']:.2f}",
-        )
+        ]
+        table.add_row(*cells)
 
     console.print(table)

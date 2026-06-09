@@ -33,6 +33,7 @@ def build_and_solve(
     horizon_start: datetime,
     wind_schedule: pd.Series | None = None,
     fcr_n_prices: pd.Series | None = None,
+    kemijoki_inflow_series: pd.Series | None = None,
 ) -> tuple[pyo.ConcreteModel, OptimisationResult]:
     """Build and solve the joint FI optimisation model.
 
@@ -52,12 +53,14 @@ def build_and_solve(
     nuclear_units = list(plant_cfg.nuclear.keys())
     pump_enabled = plant_cfg.hydro.pump_storage_enabled
     fcr_n_enabled = market_cfg.ancillary_services.FCR_N.enabled
+    kemijoki_cfg = plant_cfg.kemijoki
 
     log.info(
-        "Building FI model: %dh | %d nuclear | pump=%s | wind=%s | FCR-N=%s",
+        "Building FI model: %dh | %d nuclear | pump=%s | wind=%s | FCR-N=%s | kemijoki=%s",
         H, len(nuclear_units), pump_enabled,
         "yes" if wind_schedule is not None else "no",
         "yes" if fcr_n_enabled else "no",
+        "yes" if kemijoki_cfg else "no",
     )
 
     # -----------------------------------------------------------------------
@@ -69,10 +72,15 @@ def build_and_solve(
     # -----------------------------------------------------------------------
     # Asset blocks
     # -----------------------------------------------------------------------
-    add_hydro_block(model, plant_cfg.hydro, inflow_series)
+    add_hydro_block(model, plant_cfg.hydro, inflow_series, name="hydro")
 
     if pump_enabled:
         add_pump_hydro_block(model, plant_cfg.hydro, inflow_series)
+
+    if kemijoki_cfg is not None:
+        if kemijoki_inflow_series is None:
+            raise ValueError("kemijoki_inflow_series required when kemijoki config is present")
+        add_hydro_block(model, kemijoki_cfg, kemijoki_inflow_series, name="kemijoki")
 
     for unit_name, unit_cfg in plant_cfg.nuclear.items():
         add_nuclear_block(model, unit_cfg, unit_name, horizon_start)
@@ -80,7 +88,16 @@ def build_and_solve(
     # -----------------------------------------------------------------------
     # Market modules (Elspot + ancillary)
     # -----------------------------------------------------------------------
-    add_elspot_revenue(model, price_forecast, nuclear_units, wind_schedule=wind_schedule)
+    hydro_names = ["hydro"] + (["kemijoki"] if kemijoki_cfg else [])
+    hydro_blocks = [("hydro", plant_cfg.hydro)] + (
+        [("kemijoki", kemijoki_cfg)] if kemijoki_cfg else []
+    )
+
+    add_elspot_revenue(
+        model, price_forecast, nuclear_units,
+        wind_schedule=wind_schedule,
+        hydro_block_names=hydro_names,
+    )
 
     add_ancillary_services(
         model,
@@ -89,6 +106,7 @@ def build_and_solve(
         nuclear_unit_names=nuclear_units,
         nuclear_cfgs=plant_cfg.nuclear,
         fcr_n_prices=fcr_n_prices,
+        hydro_blocks=hydro_blocks,
     )
 
     # -----------------------------------------------------------------------
@@ -99,7 +117,14 @@ def build_and_solve(
     def _objective(m):
         elspot_rev = sum(m.elspot_revenue_expr[t] for t in m.T)
         as_rev = sum(m.as_revenue_expr[t] for t in m.T)
-        terminal_val = m.terminal_water_value * m.reservoir[T_last]
+        terminal_val = (
+            getattr(m, "hydro_terminal_water_value") * getattr(m, "hydro_reservoir")[T_last]
+        )
+        if kemijoki_cfg is not None:
+            terminal_val += (
+                getattr(m, "kemijoki_terminal_water_value")
+                * getattr(m, "kemijoki_reservoir")[T_last]
+            )
         nuclear_cost = sum(
             getattr(m, f"{n}_cost_expr")[t] for n in nuclear_units for t in m.T
         )
@@ -135,11 +160,14 @@ def build_and_solve(
     # -----------------------------------------------------------------------
     timestamps = [horizon_start + timedelta(hours=t) for t in range(H)]
 
-    hydro_gen = [pyo.value(model.hydro_gen[t]) for t in model.T]
-    pump_cons = [pyo.value(model.pump_cons[t]) for t in model.T]
-    reservoir = [pyo.value(model.reservoir[t]) / 1000 for t in model.T]
+    def _v(expr) -> float:
+        return max(0.0, pyo.value(expr))
+
+    hydro_gen = [_v(model.hydro_gen[t]) for t in model.T]
+    pump_cons = [_v(model.hydro_pump_cons[t]) for t in model.T]
+    reservoir = [pyo.value(model.hydro_reservoir[t]) / 1000 for t in model.T]
     nuclear_gen = [
-        sum(pyo.value(getattr(model, f"{n}_gen")[t]) for n in nuclear_units)
+        sum(_v(getattr(model, f"{n}_gen")[t]) for n in nuclear_units)
         for t in model.T
     ]
     wind_gen = (
@@ -150,8 +178,22 @@ def build_and_solve(
     elspot_bid = [pyo.value(model.elspot_bid[t]) for t in model.T]
     obj_val = pyo.value(model.objective)
 
+    if kemijoki_cfg is not None:
+        kemijoki_gen = [_v(model.kemijoki_gen[t]) for t in model.T]
+        kemijoki_reservoir = [pyo.value(model.kemijoki_reservoir[t]) / 1000 for t in model.T]
+    else:
+        kemijoki_gen = [0.0] * H
+        kemijoki_reservoir = [0.0] * H
+
     elspot_cash = sum(pyo.value(model.elspot_revenue_expr[t]) for t in model.T)
-    terminal_wv = pyo.value(model.terminal_water_value) * pyo.value(model.reservoir[T_last])
+    hydro_terminal_wv = (
+        pyo.value(model.hydro_terminal_water_value) * pyo.value(model.hydro_reservoir[T_last])
+    )
+    kemijoki_terminal_wv = (
+        pyo.value(model.kemijoki_terminal_water_value) * pyo.value(model.kemijoki_reservoir[T_last])
+        if kemijoki_cfg is not None else 0.0
+    )
+    terminal_wv = hydro_terminal_wv + kemijoki_terminal_wv
 
     # FCR-N results
     if fcr_n_enabled:
@@ -183,6 +225,8 @@ def build_and_solve(
         hydro_dispatch_mw=hydro_gen,
         pump_consumption_mw=pump_cons,
         reservoir_level_gwh=reservoir,
+        kemijoki_dispatch_mw=kemijoki_gen,
+        kemijoki_reservoir_level_gwh=kemijoki_reservoir,
         nuclear_dispatch_mw=nuclear_gen,
         wind_dispatch_mw=wind_gen,
         elspot_bid_mw=elspot_bid,
@@ -201,6 +245,8 @@ def result_to_dataframe(result: OptimisationResult) -> pd.DataFrame:
         "hydro_gen_mw": result.hydro_dispatch_mw,
         "pump_cons_mw": result.pump_consumption_mw,
         "reservoir_gwh": result.reservoir_level_gwh,
+        "kemijoki_gen_mw": result.kemijoki_dispatch_mw,
+        "kemijoki_reservoir_gwh": result.kemijoki_reservoir_level_gwh,
         "nuclear_gen_mw": result.nuclear_dispatch_mw,
         "wind_mw": result.wind_dispatch_mw,
         "elspot_bid_mw": result.elspot_bid_mw,

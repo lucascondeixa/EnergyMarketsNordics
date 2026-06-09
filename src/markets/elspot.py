@@ -17,15 +17,19 @@ def add_elspot_revenue(
     price_forecast: pd.Series,
     nuclear_unit_names: list[str],
     wind_schedule: pd.Series | None = None,
+    hydro_block_names: list[str] | None = None,
 ) -> None:
     """Add Elspot net position variable and revenue expression to *model*.
 
     *price_forecast* must be indexed by the same integer steps as model.T.
     *wind_schedule* is optional; if provided, wind output (MW) is added as a
     Param to the net position (must-take, always dispatched at floor price).
+    *hydro_block_names* lists all named hydro blocks to include in the net
+    position (defaults to ["hydro"] for backwards compatibility).
     """
     T = model.T
     prices = {t: float(price_forecast.iloc[t]) for t in T}
+    _hydro_names = hydro_block_names if hydro_block_names is not None else ["hydro"]
 
     if wind_schedule is not None:
         wind_mw = {t: float(wind_schedule.iloc[t]) for t in T}
@@ -38,10 +42,9 @@ def add_elspot_revenue(
 
     def _net_position(m, t):
         nuclear_gen = sum(getattr(m, f"{n}_gen")[t] for n in nuclear_unit_names)
-        return (
-            m.elspot_bid[t]
-            == m.hydro_gen[t] + nuclear_gen + m.wind_schedule[t] - m.pump_cons[t]
-        )
+        hydro_gen = sum(getattr(m, f"{n}_gen")[t] for n in _hydro_names)
+        pump_cons = sum(getattr(m, f"{n}_pump_cons")[t] for n in _hydro_names)
+        return m.elspot_bid[t] == hydro_gen + nuclear_gen + m.wind_schedule[t] - pump_cons
 
     model.elspot_balance = pyo.Constraint(T, rule=_net_position)
 

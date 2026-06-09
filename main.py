@@ -73,6 +73,7 @@ def run(
         nuclear=plant_raw["nuclear"],
         wind=plant_raw.get("wind", {}),
         se2_pump_storage=plant_raw.get("se2_pump_storage", {}),
+        kemijoki=plant_raw.get("kemijoki"),
     )
     market_cfg = MarketConfig(
         elspot=market_raw["elspot"],
@@ -90,6 +91,10 @@ def run(
     # -----------------------------------------------------------------------
     price_fi = load_price_forecast(price_fi_csv, index)
     inflow = load_inflow_forecast(inflow_csv, index, inflow_cfg=plant_cfg.hydro.inflow)
+    kemijoki_inflow = (
+        load_inflow_forecast(inflow_csv, index, inflow_cfg=plant_cfg.kemijoki.inflow)
+        if plant_cfg.kemijoki is not None else None
+    )
     wind = load_wind_forecast(wind_csv, index, wind_cfgs=plant_cfg.wind)
     price_se2 = load_se2_price_forecast(price_se2_csv, index, fi_price_series=price_fi)
     fcr_n_prices = (
@@ -105,6 +110,7 @@ def run(
     fi_model, fi_result = build_and_solve(
         plant_cfg, market_cfg, price_fi, inflow, horizon_start,
         wind_schedule=wind, fcr_n_prices=fcr_n_prices,
+        kemijoki_inflow_series=kemijoki_inflow,
     )
     fi_df = result_to_dataframe(fi_result)
 

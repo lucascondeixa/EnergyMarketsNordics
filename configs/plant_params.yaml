@@ -126,9 +126,40 @@ se2_pump_storage:
     ramp_rate_mw_per_hour: 0.6
     natural_inflow_gwh_per_hour: 0.0
 
-# Note: Kemijoki Oy co-owned plants (~3,550 MW across 20 plants on Kemijoki river) are
-# NOT included here. Fortum's ownership stake in Kemijoki Oy is ~57%. Modelling these
-# requires Kemijoki-specific reservoir data and is recommended as a Phase 2 extension.
+kemijoki:
+  # Kemijoki Oy — Fortum 57% ownership stake
+  # Aggregated model of ~20 plants on the Kemijoki river (longest river in Finland)
+  # Parameters from public sources (Fortum annual reports, Finnish Energy, WNA).
+  # Replace with SCADA data for production use.
+
+  pump_storage_enabled: false   # Ailangantunturi pumped storage under study (~2032)
+
+  turbine:
+    # ~1,105 MW total across Kemijoki Oy fleet; Fortum 57% share ~630 MW
+    # Major plants: Isohaara, Taivalkoski, Seitakorva, Valajaskoski, Vanttauskoski,
+    #               Pirttikoski, Petäjäskoski, Ossauskoski + ~12 smaller plants
+    capacity_mw: 630
+    min_output_mw: 0
+    efficiency: 0.90
+    ramp_rate_mw_per_hour: 315  # ~50% of capacity
+
+  pump:
+    capacity_mw: 0
+    min_input_mw: 0
+    efficiency: 0.85
+
+  reservoir:
+    # Kemijärvi seasonal storage (~840 GWh total); Fortum 57% share ~480 GWh
+    capacity_gwh: 480.0
+    min_level_gwh: 48.0         # ~10% of capacity
+    initial_level_gwh: 336.0    # ~70% fill — post-flood, beginning of summer drawdown
+    terminal_water_value_eur_per_mwh: 55.0
+
+  inflow:
+    # Kemijoki Oy ~3.4 TWh/year total; Fortum 57% ~1.94 TWh/year → 0.22 GWh/h avg water
+    annual_avg_gwh_per_hour: 0.22
+    seasonal_amplitude: 0.75    # Very strong spring flood (northern drainage area, heavy snowpack)
+    peak_day_of_year: 133       # ~May 13 (slightly earlier than Oulujoki — more northern)
 
 # CHP plants (heat-network driven, not independently optimised):
 #   Suomenoja (Espoo): coal unit closed Apr 2024; gas backup remains

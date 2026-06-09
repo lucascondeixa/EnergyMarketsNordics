@@ -92,6 +92,7 @@ class PlantConfig(BaseModel):
     nuclear: dict[str, NuclearUnitConfig]
     wind: dict[str, WindFarmConfig] = {}
     se2_pump_storage: dict[str, PumpStorageUnitConfig] = {}
+    kemijoki: HydroConfig | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +179,8 @@ class OptimisationResult(BaseModel):
     hydro_dispatch_mw: list[float]
     pump_consumption_mw: list[float]
     reservoir_level_gwh: list[float]
+    kemijoki_dispatch_mw: list[float]
+    kemijoki_reservoir_level_gwh: list[float]
     nuclear_dispatch_mw: list[float]
     wind_dispatch_mw: list[float]
     elspot_bid_mw: list[float]
