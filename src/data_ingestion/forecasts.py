@@ -264,6 +264,80 @@ def _synthetic_fcr_n_price(
     return pd.Series(np.clip(prices, 0.1, 30.0), index=index, name="fcr_n_price_eur_mw_h")
 
 
+def load_fcr_d_price_forecast(
+    direction: str,
+    source: str | Path,
+    horizon_index: pd.DatetimeIndex,
+) -> pd.Series:
+    """Load an FCR-D capacity price forecast (EUR/MW/h) aligned to *horizon_index*.
+
+    *direction*: "up" or "down".
+    *source*: "synthetic" or path to CSV with columns 'timestamp', 'price_eur_mwh'.
+
+    FCR-D Up activates on under-frequency (49.5-50.0 Hz droop) and typically
+    commands a premium over FCR-N. FCR-D Down activates on over-frequency
+    (50.0-50.5 Hz droop) and is usually priced lower than FCR-D Up.
+    """
+    if direction not in ("up", "down"):
+        raise ValueError(f"direction must be 'up' or 'down', got {direction!r}")
+
+    if str(source) == "synthetic":
+        log.info("Using synthetic FCR-D %s price forecast (development mode)", direction)
+        return _synthetic_fcr_d_price(horizon_index, direction)
+
+    if str(source) == "api":
+        log.info("Fetching FCR-D %s capacity prices from Fingrid", direction)
+        client = FingridClient()
+        start = horizon_index[0].to_pydatetime()
+        end = (horizon_index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+        try:
+            raw = (
+                client.get_fcr_d_up_prices(start, end)
+                if direction == "up"
+                else client.get_fcr_d_down_prices(start, end)
+            )
+        except Exception as exc:
+            log.error("Fingrid FCR-D %s fetch failed (%s); falling back to synthetic", direction, exc)
+            return _synthetic_fcr_d_price(horizon_index, direction)
+        return _merge_real_and_synthetic(raw, horizon_index, lambda idx: _synthetic_fcr_d_price(idx, direction))
+
+    path = Path(source)
+    if not path.exists():
+        raise FileNotFoundError(f"FCR-D {direction} price file not found: {path}")
+
+    df = pd.read_csv(path, parse_dates=["timestamp"])
+    df = df.set_index("timestamp")
+    df.index = pd.DatetimeIndex(df.index, tz="UTC")
+    series = df["price_eur_mwh"].reindex(horizon_index, method="nearest")
+    return series.ffill().bfill().clip(lower=0)
+
+
+def _synthetic_fcr_d_price(
+    index: pd.DatetimeIndex,
+    direction: str,
+    seed: int = 142,
+) -> pd.Series:
+    """Synthetic FCR-D capacity price series (EUR/MW/h).
+
+    FCR-D Up commands a premium over FCR-N (higher activation value, scarcer
+    in winter peak-demand hours). FCR-D Down is priced lower on average.
+    """
+    base = 10.0 if direction == "up" else 6.0
+    rng = np.random.default_rng(seed if direction == "up" else seed + 1)
+    n = len(index)
+
+    day_of_year = index.day_of_year.to_numpy()
+    seasonal = 1.0 + 0.4 * np.cos(2 * math.pi * (day_of_year - 15) / 365)
+
+    hour_of_day = index.hour.to_numpy()
+    daily = 1.0 + 0.1 * np.sin(2 * math.pi * (hour_of_day - 8) / 24)
+
+    noise = rng.exponential(scale=2.0, size=n)
+    prices = base * seasonal * daily + noise
+    cap = 40.0 if direction == "up" else 25.0
+    return pd.Series(np.clip(prices, 0.1, cap), index=index, name=f"fcr_d_{direction}_price_eur_mw_h")
+
+
 def load_se2_price_forecast(
     source: str | Path,
     horizon_index: pd.DatetimeIndex,

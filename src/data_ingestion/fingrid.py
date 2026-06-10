@@ -9,6 +9,7 @@ Verified dataset IDs (confirmed against API v2 catalogue):
   - 181:  Wind power production - real-time data (MW, 3-min)
   - 317:  FCR-N hourly market prices (EUR/MW/h)
   - 318:  FCR-D upward hourly market prices (EUR/MW/h)
+  - 320:  FCR-D downward hourly market prices (EUR/MW/h) — verify against catalogue before live use
 
 Note: the Fingrid API v2 returns the value under a key equal to the Finnish
 dataset name (e.g. "Ydinvoimatuotanto - reaaliaikatieto"), not "value".
@@ -111,6 +112,9 @@ class FingridClient:
 
     def get_fcr_d_up_prices(self, start: datetime, end: datetime) -> pd.Series:
         return self.get_dataset(318, start, end)
+
+    def get_fcr_d_down_prices(self, start: datetime, end: datetime) -> pd.Series:
+        return self.get_dataset(320, start, end)
 
     def get_nuclear_production(self, start: datetime, end: datetime) -> pd.Series:
         return self.get_dataset(188, start, end)

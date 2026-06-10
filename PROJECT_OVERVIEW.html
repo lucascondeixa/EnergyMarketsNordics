@@ -348,6 +348,7 @@
           <li>Hydro reservoir scheduling (inflow, storage dynamics, dispatch timing)</li>
           <li>Wind must-take allocation</li>
           <li>FCR-N ancillary service capacity bids (Fingrid frequency reserve)</li>
+          <li>FCR-D Up/Down capacity bids (disabled by default, configurable)</li>
         </ul>
       </div>
       <div class="card">
@@ -374,8 +375,8 @@
     <div class="status-grid">
       <div class="status-item">
         <span class="label">Tests passing</span>
-        <span class="value">55 / 55</span>
-        <span class="detail">Full suite, both zones + SYKE client</span>
+        <span class="value">68 / 68</span>
+        <span class="detail">Full suite, both zones + SYKE client + FCR-D</span>
       </div>
       <div class="status-item">
         <span class="label">Solve time</span>
@@ -447,9 +448,10 @@
         (hydro balance, wind outlook, cross-border flows).
       </li>
       <li>
-        <strong>FCR-N only for ancillary services.</strong>
-        FCR-D, aFRR, and mFRR are modelled in the config but not yet enabled.
-        FCR-N is currently the highest-value ancillary service for flexible hydro in Finland.
+        <strong>FCR-N enabled by default; FCR-D Up/Down implemented but disabled.</strong>
+        FCR-D Up/Down constraints (incl. headroom coupling with FCR-N on shared assets) are
+        implemented and tested, but left at <code>enabled: false</code> in <code>market_params.yaml</code>
+        pending Fingrid pre-qualification confirmation. aFRR and mFRR remain modelled but not yet enabled.
       </li>
       <li>
         <strong>Wind is must-take.</strong>
@@ -504,14 +506,19 @@
         Real hydro inflow from SYKE OData API — level-correction forecaster for Kemijoki (ID 1388) and Oulujoki (ID 1314)
       </li>
       <li>
-        <span class="dot dot-next"></span>
-        <span class="tag tag-next">Next</span>
-        FCR-D upward/downward and aFRR ancillary service markets
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        Streamlit dashboard for interactive bid review
       </li>
       <li>
-        <span class="dot dot-later"></span>
-        <span class="tag tag-later">Later</span>
-        Streamlit dashboard for interactive bid review
+        <span class="dot dot-done"></span>
+        <span class="tag tag-done">Done</span>
+        FCR-D Up/Down ancillary service markets (with FCR-N headroom coupling) &mdash; implemented, disabled by default
+      </li>
+      <li>
+        <span class="dot dot-next"></span>
+        <span class="tag tag-next">Next</span>
+        aFRR and mFRR ancillary service markets
       </li>
       <li>
         <span class="dot dot-later"></span>
@@ -524,7 +531,7 @@
 </main>
 
 <footer>
-  EnergyMarketsNordics &mdash; last updated 2026-06-09 (SYKE inflow integration)
+  EnergyMarketsNordics &mdash; last updated 2026-06-10 (FCR-D Up/Down ancillary services)
 </footer>
 
 </body>

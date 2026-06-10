@@ -28,12 +28,21 @@ ancillary_services:
     enabled: false              # Frequency Containment Reserve – Disturbance (upward)
     symmetric: false
     min_bid_mw: 1.0
-    activation_trigger_hz: 0.5
+    activation_trigger_hz: 0.5  # Full activation at −0.5 Hz (linear droop 49.5–50.0 Hz)
+    gate_closure_hour_cet: 8    # D-1 08:00 CET (same as FCR-N)
+    # Fingrid 70 MW single-point-of-failure limit per BSP also applies to FCR-D
+    max_fcr_d_up_mw_hydro: 70.0
+    # VVER-440 FCR-D Up capability (upward ramp from operating point)
+    max_fcr_d_up_mw_per_nuclear_unit: 50.0
 
   FCR_D_DOWN:
-    enabled: false
+    enabled: false              # Frequency Containment Reserve – Disturbance (downward)
     symmetric: false
     min_bid_mw: 1.0
+    activation_trigger_hz: 0.5  # Full activation at +0.5 Hz (linear droop 50.0–50.5 Hz)
+    gate_closure_hour_cet: 8
+    max_fcr_d_down_mw_hydro: 70.0
+    max_fcr_d_down_mw_per_nuclear_unit: 50.0
 
   aFRR:
     enabled: false              # Automatic Frequency Restoration Reserve

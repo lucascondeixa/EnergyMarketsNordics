@@ -33,6 +33,8 @@ def build_and_solve(
     horizon_start: datetime,
     wind_schedule: pd.Series | None = None,
     fcr_n_prices: pd.Series | None = None,
+    fcr_d_up_prices: pd.Series | None = None,
+    fcr_d_down_prices: pd.Series | None = None,
     kemijoki_inflow_series: pd.Series | None = None,
 ) -> tuple[pyo.ConcreteModel, OptimisationResult]:
     """Build and solve the joint FI optimisation model.
@@ -47,19 +49,27 @@ def build_and_solve(
     wind_schedule:    Optional wind must-take schedule (MW)
     fcr_n_prices:     Optional FCR-N capacity price forecast (EUR/MW/h).
                       Required when market_cfg.ancillary_services.FCR_N.enabled=True.
+    fcr_d_up_prices:  Optional FCR-D Up capacity price forecast (EUR/MW/h).
+                      Required when market_cfg.ancillary_services.FCR_D_UP.enabled=True.
+    fcr_d_down_prices: Optional FCR-D Down capacity price forecast (EUR/MW/h).
+                      Required when market_cfg.ancillary_services.FCR_D_DOWN.enabled=True.
     """
     opt_cfg = market_cfg.optimisation
     H = opt_cfg.horizon_hours
     nuclear_units = list(plant_cfg.nuclear.keys())
     pump_enabled = plant_cfg.hydro.pump_storage_enabled
     fcr_n_enabled = market_cfg.ancillary_services.FCR_N.enabled
+    fcr_d_up_enabled = market_cfg.ancillary_services.FCR_D_UP.enabled
+    fcr_d_down_enabled = market_cfg.ancillary_services.FCR_D_DOWN.enabled
     kemijoki_cfg = plant_cfg.kemijoki
 
     log.info(
-        "Building FI model: %dh | %d nuclear | pump=%s | wind=%s | FCR-N=%s | kemijoki=%s",
+        "Building FI model: %dh | %d nuclear | pump=%s | wind=%s | FCR-N=%s | FCR-D up/down=%s/%s | kemijoki=%s",
         H, len(nuclear_units), pump_enabled,
         "yes" if wind_schedule is not None else "no",
         "yes" if fcr_n_enabled else "no",
+        "yes" if fcr_d_up_enabled else "no",
+        "yes" if fcr_d_down_enabled else "no",
         "yes" if kemijoki_cfg else "no",
     )
 
@@ -106,6 +116,8 @@ def build_and_solve(
         nuclear_unit_names=nuclear_units,
         nuclear_cfgs=plant_cfg.nuclear,
         fcr_n_prices=fcr_n_prices,
+        fcr_d_up_prices=fcr_d_up_prices,
+        fcr_d_down_prices=fcr_d_down_prices,
         hydro_blocks=hydro_blocks,
     )
 
@@ -210,6 +222,22 @@ def build_and_solve(
         fcr_n_total = [0.0] * H
         fcr_n_rev = 0.0
 
+    # FCR-D Up / Down results
+    def _extract_fcr_d(direction: str, enabled: bool):
+        if not enabled:
+            return [0.0] * H, [0.0] * H, [0.0] * H, 0.0
+        hydro = [pyo.value(getattr(model, f"r_fcr_d_{direction}_hydro")[t]) for t in model.T]
+        nuc = [
+            sum(pyo.value(getattr(model, f"r_fcr_d_{direction}_{n}")[t]) for n in nuclear_units)
+            for t in model.T
+        ]
+        total = [pyo.value(getattr(model, f"r_fcr_d_{direction}_total")[t]) for t in model.T]
+        rev = sum(pyo.value(getattr(model, f"fcr_d_{direction}_revenue_expr")[t]) for t in model.T)
+        return hydro, nuc, total, rev
+
+    fcr_d_up_hydro, fcr_d_up_nuc, fcr_d_up_total, fcr_d_up_rev = _extract_fcr_d("up", fcr_d_up_enabled)
+    fcr_d_down_hydro, fcr_d_down_nuc, fcr_d_down_total, fcr_d_down_rev = _extract_fcr_d("down", fcr_d_down_enabled)
+
     try:
         mip_gap = float(result_raw.problem.lower_bound - obj_val) / abs(obj_val)
     except Exception:
@@ -234,6 +262,14 @@ def build_and_solve(
         fcr_n_nuclear_mw=fcr_n_nuc,
         fcr_n_total_mw=fcr_n_total,
         fcr_n_revenue_eur=round(fcr_n_rev, 2),
+        fcr_d_up_hydro_mw=fcr_d_up_hydro,
+        fcr_d_up_nuclear_mw=fcr_d_up_nuc,
+        fcr_d_up_total_mw=fcr_d_up_total,
+        fcr_d_up_revenue_eur=round(fcr_d_up_rev, 2),
+        fcr_d_down_hydro_mw=fcr_d_down_hydro,
+        fcr_d_down_nuclear_mw=fcr_d_down_nuc,
+        fcr_d_down_total_mw=fcr_d_down_total,
+        fcr_d_down_revenue_eur=round(fcr_d_down_rev, 2),
         timestamps=timestamps,
     )
 
@@ -253,4 +289,10 @@ def result_to_dataframe(result: OptimisationResult) -> pd.DataFrame:
         "fcr_n_hydro_mw": result.fcr_n_hydro_mw,
         "fcr_n_nuclear_mw": result.fcr_n_nuclear_mw,
         "fcr_n_total_mw": result.fcr_n_total_mw,
+        "fcr_d_up_hydro_mw": result.fcr_d_up_hydro_mw,
+        "fcr_d_up_nuclear_mw": result.fcr_d_up_nuclear_mw,
+        "fcr_d_up_total_mw": result.fcr_d_up_total_mw,
+        "fcr_d_down_hydro_mw": result.fcr_d_down_hydro_mw,
+        "fcr_d_down_nuclear_mw": result.fcr_d_down_nuclear_mw,
+        "fcr_d_down_total_mw": result.fcr_d_down_total_mw,
     }).set_index("timestamp")

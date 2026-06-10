@@ -25,6 +25,7 @@ from rich.console import Console
 
 from src.bidding.exporter import export_dispatch_schedule, export_elspot_bids, print_summary
 from src.data_ingestion.forecasts import (
+    load_fcr_d_price_forecast,
     load_fcr_n_price_forecast,
     load_inflow_forecast,
     load_price_forecast,
@@ -57,6 +58,8 @@ def run(
     inflow_csv: str = typer.Option("synthetic", help="Hydro inflow forecast CSV or 'synthetic'"),
     wind_csv: str = typer.Option("synthetic", help="Wind forecast CSV or 'synthetic'"),
     fcr_n_csv: str = typer.Option("synthetic", help="FCR-N capacity price CSV or 'synthetic'"),
+    fcr_d_up_csv: str = typer.Option("synthetic", help="FCR-D Up capacity price CSV or 'synthetic'"),
+    fcr_d_down_csv: str = typer.Option("synthetic", help="FCR-D Down capacity price CSV or 'synthetic'"),
     horizon: int = typer.Option(168, help="Optimisation horizon in hours"),
     output_dir: Path = typer.Option(Path("data/processed/bids")),
 ) -> None:
@@ -110,6 +113,16 @@ def run(
         if market_cfg.ancillary_services.FCR_N.enabled
         else None
     )
+    fcr_d_up_prices = (
+        load_fcr_d_price_forecast("up", fcr_d_up_csv, index)
+        if market_cfg.ancillary_services.FCR_D_UP.enabled
+        else None
+    )
+    fcr_d_down_prices = (
+        load_fcr_d_price_forecast("down", fcr_d_down_csv, index)
+        if market_cfg.ancillary_services.FCR_D_DOWN.enabled
+        else None
+    )
 
     # -----------------------------------------------------------------------
     # Zone FI optimisation
@@ -118,6 +131,7 @@ def run(
     fi_model, fi_result = build_and_solve(
         plant_cfg, market_cfg, price_fi, inflow, horizon_start,
         wind_schedule=wind, fcr_n_prices=fcr_n_prices,
+        fcr_d_up_prices=fcr_d_up_prices, fcr_d_down_prices=fcr_d_down_prices,
         kemijoki_inflow_series=kemijoki_inflow,
     )
     fi_df = result_to_dataframe(fi_result)
@@ -166,13 +180,24 @@ def run(
     console.rule("[bold]Portfolio Summary[/bold]")
     print_summary(fi_df, fi_result.objective_value_eur)
 
-    fi_cash_total = fi_result.elspot_cash_revenue_eur + fi_result.fcr_n_revenue_eur
+    fi_ancillary_total = (
+        fi_result.fcr_n_revenue_eur
+        + fi_result.fcr_d_up_revenue_eur
+        + fi_result.fcr_d_down_revenue_eur
+    )
+    fi_cash_total = fi_result.elspot_cash_revenue_eur + fi_ancillary_total
     total_cash = fi_cash_total + se2_revenue
     console.print(f"\n[bold]7-day Expected Revenue (cash)[/bold]")
     console.print(f"  FI  Elspot generation:        EUR {fi_result.elspot_cash_revenue_eur:>12,.0f}")
     if fi_result.fcr_n_revenue_eur > 0:
         avg_fcr_n = sum(fi_result.fcr_n_total_mw) / len(fi_result.fcr_n_total_mw)
         console.print(f"  FI  FCR-N capacity (avg {avg_fcr_n:.0f} MW): EUR {fi_result.fcr_n_revenue_eur:>12,.0f}")
+    if fi_result.fcr_d_up_revenue_eur > 0:
+        avg_fcr_d_up = sum(fi_result.fcr_d_up_total_mw) / len(fi_result.fcr_d_up_total_mw)
+        console.print(f"  FI  FCR-D Up (avg {avg_fcr_d_up:.0f} MW):    EUR {fi_result.fcr_d_up_revenue_eur:>12,.0f}")
+    if fi_result.fcr_d_down_revenue_eur > 0:
+        avg_fcr_d_down = sum(fi_result.fcr_d_down_total_mw) / len(fi_result.fcr_d_down_total_mw)
+        console.print(f"  FI  FCR-D Down (avg {avg_fcr_d_down:.0f} MW):  EUR {fi_result.fcr_d_down_revenue_eur:>12,.0f}")
     console.print(f"  FI  Total cash:               EUR {fi_cash_total:>12,.0f}")
     if se2_result:
         console.print(f"  SE2 Pump arb:                 EUR {se2_revenue:>12,.0f}")

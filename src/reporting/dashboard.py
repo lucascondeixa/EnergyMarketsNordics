@@ -21,6 +21,7 @@ st.set_page_config(
 )
 
 from src.data_ingestion.forecasts import (
+    load_fcr_d_price_forecast,
     load_fcr_n_price_forecast,
     load_inflow_forecast,
     load_price_forecast,
@@ -157,10 +158,19 @@ if run_btn or "fi_result" not in st.session_state:
             load_fcr_n_price_forecast("synthetic", index)
             if market_cfg.ancillary_services.FCR_N.enabled else None
         )
+        fcr_d_up_prices = (
+            load_fcr_d_price_forecast("up", "synthetic", index)
+            if market_cfg.ancillary_services.FCR_D_UP.enabled else None
+        )
+        fcr_d_down_prices = (
+            load_fcr_d_price_forecast("down", "synthetic", index)
+            if market_cfg.ancillary_services.FCR_D_DOWN.enabled else None
+        )
 
         _, fi_result = build_and_solve(
             plant_cfg, market_cfg, price_fi, inflow, horizon_start,
             wind_schedule=wind, fcr_n_prices=fcr_n_prices,
+            fcr_d_up_prices=fcr_d_up_prices, fcr_d_down_prices=fcr_d_down_prices,
             kemijoki_inflow_series=kemijoki_inflow,
         )
         fi_df = result_to_dataframe(fi_result)
@@ -204,12 +214,25 @@ horizon_start: datetime = st.session_state.horizon_start
 # ---------------------------------------------------------------------------
 
 se2_cash = se2_result.objective_value_eur if se2_result else 0.0
-total_cash = fi_result.elspot_cash_revenue_eur + fi_result.fcr_n_revenue_eur + se2_cash
+fi_ancillary_rev = (
+    fi_result.fcr_n_revenue_eur
+    + fi_result.fcr_d_up_revenue_eur
+    + fi_result.fcr_d_down_revenue_eur
+)
+total_cash = fi_result.elspot_cash_revenue_eur + fi_ancillary_rev + se2_cash
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Portfolio cash (EUR)", f"{total_cash:,.0f}")
 c2.metric("FI Elspot (EUR)", f"{fi_result.elspot_cash_revenue_eur:,.0f}")
-c3.metric("FI FCR-N (EUR)", f"{fi_result.fcr_n_revenue_eur:,.0f}")
+c3.metric(
+    "FI Ancillary (EUR)",
+    f"{fi_ancillary_rev:,.0f}",
+    help=(
+        f"FCR-N: {fi_result.fcr_n_revenue_eur:,.0f}  |  "
+        f"FCR-D Up: {fi_result.fcr_d_up_revenue_eur:,.0f}  |  "
+        f"FCR-D Down: {fi_result.fcr_d_down_revenue_eur:,.0f}"
+    ),
+)
 c4.metric("SE2 pump arb (EUR)", f"{se2_cash:,.0f}")
 c5.metric(
     "Terminal water credit (EUR)",
@@ -285,6 +308,9 @@ with tab_fi:
     st.plotly_chart(fig_fi, width="stretch", key="fi_dispatch")
 
     has_fcr_n = bool(fi_df["fcr_n_total_mw"].any())
+    has_fcr_d_up = bool(fi_df["fcr_d_up_total_mw"].any())
+    has_fcr_d_down = bool(fi_df["fcr_d_down_total_mw"].any())
+    has_as = has_fcr_n or has_fcr_d_up or has_fcr_d_down
     col_a, col_b = st.columns(2)
 
     with col_a:
@@ -293,22 +319,33 @@ with tab_fi:
         st.plotly_chart(fig_res_fi, width="stretch", key="fi_reservoir")
 
     with col_b:
-        if has_fcr_n:
-            st.subheader("FCR-N allocation")
+        if has_as:
+            st.subheader("Ancillary service allocation")
             fig_fcr = go.Figure()
-            fig_fcr.add_trace(go.Bar(
-                x=fi_df.index, y=fi_df["fcr_n_hydro_mw"],
-                name="Hydro FCR-N", marker_color="#2196F3",
-            ))
-            fig_fcr.add_trace(go.Bar(
-                x=fi_df.index, y=fi_df["fcr_n_nuclear_mw"],
-                name="Nuclear FCR-N", marker_color="#FF9800",
-            ))
+            if has_fcr_n:
+                fig_fcr.add_trace(go.Bar(
+                    x=fi_df.index, y=fi_df["fcr_n_hydro_mw"],
+                    name="Hydro FCR-N", marker_color="#2196F3",
+                ))
+                fig_fcr.add_trace(go.Bar(
+                    x=fi_df.index, y=fi_df["fcr_n_nuclear_mw"],
+                    name="Nuclear FCR-N", marker_color="#FF9800",
+                ))
+            if has_fcr_d_up:
+                fig_fcr.add_trace(go.Bar(
+                    x=fi_df.index, y=fi_df["fcr_d_up_total_mw"],
+                    name="FCR-D Up", marker_color="#4CAF50",
+                ))
+            if has_fcr_d_down:
+                fig_fcr.add_trace(go.Bar(
+                    x=fi_df.index, y=fi_df["fcr_d_down_total_mw"],
+                    name="FCR-D Down", marker_color="#9C27B0",
+                ))
             fig_fcr.update_layout(
                 barmode="stack", yaxis_title="MW",
                 margin=dict(t=30, b=40), hovermode="x unified",
             )
-            st.plotly_chart(fig_fcr, width="stretch", key="fi_fcr_n")
+            st.plotly_chart(fig_fcr, width="stretch", key="fi_ancillary")
         else:
             st.subheader("Pump consumption")
             fig_pump = _line([(fi_df["pump_cons_mw"], "Pump", "#9C27B0")], "MW")

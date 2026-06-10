@@ -11,7 +11,7 @@ Day-ahead and ancillary services bidding optimiser for a Finnish/Swedish hydro-n
 
 ## What it does
 
-- Solves a **7-day rolling MILP** (168 × 1h time steps) jointly optimising Elspot day-ahead bids and FCR-N ancillary service capacity
+- Solves a **7-day rolling MILP** (168 × 1h time steps) jointly optimising Elspot day-ahead bids and FCR-N / FCR-D Up / FCR-D Down ancillary service capacity
 - Zone FI: nuclear unit commitment (min up/down times, ramp limits, planned outages) + hydro reservoir dynamics + wind must-take
 - Zone SE2: pump storage arbitrage (independent from FI)
 - Outputs hourly dispatch schedules and 10-step Elspot bid curves ready for manual review
@@ -24,7 +24,7 @@ Day-ahead prices are fetched from the **ENTSO-E Transparency Platform** (free AP
 2. Median profile by `(hour_of_day, day_of_week)` — 168 calendar bins
 3. Level correction anchored to the last 7 days of actuals (corrects for current price regime)
 
-FCR-N capacity prices remain synthetic (seasonal model). Hydro inflow uses a **SYKE level-correction approach**: the `SYKEInflowForecaster` fetches 3 years of daily discharge from the Finnish Environment Institute OData API for Kemijoki/Isohaara (ID 1388) and Oulujoki/Merikoski (ID 1314), builds a day-of-year median profile, and applies the recent/historical ratio as a scalar to the synthetic seasonal curve. Falls back to pure synthetic if the API is unreachable.
+FCR-N and FCR-D Up/Down capacity prices remain synthetic (seasonal model). Hydro inflow uses a **SYKE level-correction approach**: the `SYKEInflowForecaster` fetches 3 years of daily discharge from the Finnish Environment Institute OData API for Kemijoki/Isohaara (ID 1388) and Oulujoki/Merikoski (ID 1314), builds a day-of-year median profile, and applies the recent/historical ratio as a scalar to the synthetic seasonal curve. Falls back to pure synthetic if the API is unreachable.
 
 ## Quickstart
 
@@ -64,9 +64,9 @@ src/
     forecasts.py        # Forecast adapter (api / forecast / synthetic / CSV)
   markets/
     elspot.py           # Elspot revenue and bid curve construction
-    ancillary.py        # FCR-N capacity market constraints
+    ancillary.py        # FCR-N + FCR-D Up/Down capacity market constraints
   optimization/
-    joint_optimizer.py  # FI MILP (nuclear + hydro + wind + FCR-N)
+    joint_optimizer.py  # FI MILP (nuclear + hydro + wind + FCR-N + FCR-D)
     pump_arb_optimizer.py  # SE2 pump storage arbitrage MILP
   bidding/
     exporter.py         # CSV and bid-curve export
@@ -78,9 +78,9 @@ src/
 
 configs/
   plant_params.yaml     # Asset parameters (capacity, costs, reservoir, inflow)
-  market_params.yaml    # Market rules (price caps, FCR-N limits, solver settings)
+  market_params.yaml    # Market rules (price caps, FCR-N/FCR-D limits, solver settings)
 
-tests/                  # 55 unit tests (pytest)
+tests/                  # 68 unit tests (pytest)
 notebooks/              # Exploratory analysis (Fingrid data, prices, results)
 ```
 
@@ -117,18 +117,19 @@ Key parameters in `configs/plant_params.yaml`:
 
 ## Phase 2 roadmap
 
-- FCR-D and aFRR ancillary service markets
+- ~~FCR-D Up/Down ancillary service markets~~ done — disabled by default (`enabled: false` in `market_params.yaml`), enable per zone once Fingrid pre-qualification is confirmed
+- aFRR and mFRR ancillary service markets
 - Intraday (Elbas) re-optimisation layer
 
 ## Dashboard
 
-Interactive bid-review dashboard (portfolio dispatch, reservoir levels, FCR-N, SE2 pump, bid curves, CSV export):
+Interactive bid-review dashboard (portfolio dispatch, reservoir levels, FCR-N/FCR-D allocation, SE2 pump, bid curves, CSV export):
 
 ```
 streamlit run src/reporting/dashboard.py
 ```
 
-Sidebar controls: price source (live ENTSO-E or synthetic), horizon, terminal water value slider, FCR-N hydro cap slider.
+Sidebar controls: price source (live ENTSO-E or synthetic), horizon, terminal water value slider, FCR-N hydro cap slider. The FI Zone "Ancillary service allocation" chart shows FCR-N, FCR-D Up, and FCR-D Down dispatch whenever those services are enabled in `market_params.yaml`.
 
 ## Requirements
 

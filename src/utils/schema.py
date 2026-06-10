@@ -119,9 +119,31 @@ class FCRNConfig(BaseModel):
     max_fcr_n_mw_per_nuclear_unit: float = Field(gt=0, default=25.0)
 
 
+class FCRDUpConfig(BaseModel):
+    enabled: bool = False
+    symmetric: bool = False
+    min_bid_mw: float = 1.0
+    activation_trigger_hz: float = 0.5
+    gate_closure_hour_cet: int = 8
+    max_fcr_d_up_mw_hydro: float = Field(gt=0, default=70.0)
+    max_fcr_d_up_mw_per_nuclear_unit: float = Field(gt=0, default=50.0)
+
+
+class FCRDDownConfig(BaseModel):
+    enabled: bool = False
+    symmetric: bool = False
+    min_bid_mw: float = 1.0
+    activation_trigger_hz: float = 0.5
+    gate_closure_hour_cet: int = 8
+    max_fcr_d_down_mw_hydro: float = Field(gt=0, default=70.0)
+    max_fcr_d_down_mw_per_nuclear_unit: float = Field(gt=0, default=50.0)
+
+
 class AncillaryServicesConfig(BaseModel):
     FCR_N: FCRNConfig = FCRNConfig()
-    # FCR_D_UP, FCR_D_DOWN, aFRR, mFRR: reserved for future implementation
+    FCR_D_UP: FCRDUpConfig = FCRDUpConfig()
+    FCR_D_DOWN: FCRDDownConfig = FCRDDownConfig()
+    # aFRR, mFRR: reserved for future implementation
 
 
 class SolverOptions(BaseModel):
@@ -190,6 +212,16 @@ class OptimisationResult(BaseModel):
     fcr_n_nuclear_mw: list[float]    # aggregate across all nuclear units
     fcr_n_total_mw: list[float]
     fcr_n_revenue_eur: float
+    # FCR-D Up ancillary service results (zeros when FCR-D Up disabled)
+    fcr_d_up_hydro_mw: list[float]
+    fcr_d_up_nuclear_mw: list[float]
+    fcr_d_up_total_mw: list[float]
+    fcr_d_up_revenue_eur: float
+    # FCR-D Down ancillary service results (zeros when FCR-D Down disabled)
+    fcr_d_down_hydro_mw: list[float]
+    fcr_d_down_nuclear_mw: list[float]
+    fcr_d_down_total_mw: list[float]
+    fcr_d_down_revenue_eur: float
     timestamps: list[datetime]
 
 
